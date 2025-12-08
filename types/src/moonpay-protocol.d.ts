@@ -26,6 +26,21 @@ export default class MoonPayProtocol extends FiatProtocol {
      */
     override buy(options: MoonPayBuyOptions): Promise<string>;
     /**
+     * Gets a quote for a crypto asset purchase.
+     * @override
+     * @param {MoonPayQuoteBuyOptions} options
+     * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
+     */
+    override quoteBuy(options: MoonPayQuoteBuyOptions): Promise<MoonPayBuyQuote>;
+    /**
+     * Gets a quote for a crypto asset sale.
+     * @override
+     * @param {MoonPayQuoteSellOptions} options
+     * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
+  
+     */
+    override quoteSell(options: MoonPayQuoteSellOptions): Promise<MoonPaySellQuote>;
+    /**
      * Generates a widget URL for a user to sell a crypto asset for fiat currency.
      * @override
      * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
@@ -69,6 +84,9 @@ export type IWalletAccount = import("@tetherto/wdk-wallet").IWalletAccount;
 export type IWalletAccountReadOnly = import("@tetherto/wdk-wallet").IWalletAccountReadOnly;
 export type BuyOptions = import("@tetherto/wdk-wallet/protocols").BuyOptions;
 export type SellOptions = import("@tetherto/wdk-wallet/protocols").SellOptions;
+export type SellCommonOptions = import("@tetherto/wdk-wallet/protocols").SellCommonOptions;
+export type SellExactCryptoAmountOptions = import("@tetherto/wdk-wallet/protocols").SellExactCryptoAmountOptions;
+export type FiatQuote = import("@tetherto/wdk-wallet/protocols").FiatQuote;
 export type FiatTransactionStatus = import("@tetherto/wdk-wallet/protocols").FiatTransactionStatus;
 export type FiatTransactionDetail = import("@tetherto/wdk-wallet/protocols").FiatTransactionDetail;
 export type SupportedCountry = import("@tetherto/wdk-wallet/protocols").SupportedCountry;
@@ -150,6 +168,34 @@ export type MoonPaySellParams = MoonPayWidgetUiParams & {
     externalCustomerId?: string;
     paymentMethod?: string;
 };
+export type MoonPayQuoteBuyParams = {
+    /**
+     * - A positive integer representing your extra fee percentage for the transaction. The minimum is 0 and the maximum is 10. If you don't provide it, we'll use the default value set to your account.
+     */
+    extraFeePercentage?: number;
+    /**
+     * - The transaction's payment method.
+     */
+    paymentMethod?: string;
+    /**
+     * - A boolean indicating whether baseCurrencyAmount should include extra fees. Defaults to false.
+     */
+    areFeesIncluded?: boolean;
+    /**
+     * - Wallet address of the customer who requested the quote.
+     */
+    walletAddress?: string;
+};
+export type MoonPayQuoteSellParams = {
+    /**
+     * - A positive integer representing your extra fee percentage for the transaction. The minimum is 0 and the maximum is 10. If you don't provide it, we'll use the default value set to your account.
+     */
+    extraFeePercentage?: number;
+    /**
+     * - The transaction's payment method.
+     */
+    payoutMethod?: string;
+};
 export type MoonPayBankDepositInfo = {
     /**
      * - The IBAN of the bank account.
@@ -214,6 +260,10 @@ export type MoonPayFiatCurrencyDetails = {
      */
     precision: number;
     /**
+     * - The currency's decimals.
+     */
+    decimals: number;
+    /**
      * - Represents the minimum transaction buy amount when using this currency as a base currency.
      */
     minBuyAmount: number | null;
@@ -255,6 +305,10 @@ export type MoonPayCryptoCurrencyDetails = {
      * - The currency's precision (number of digits after decimal point).
      */
     precision: number;
+    /**
+     * - The currency's decimals.
+     */
+    decimals: number;
     /**
      * - Represents the minimum amount of cryptocurrency you can buy.
      */
@@ -648,6 +702,118 @@ export type MoonPayCountryDetail = {
      */
     supportedDocuments: string[];
 };
+export type MoonPayBuyQuoteMetadata = {
+    /**
+     * - ID of your business account
+     */
+    accountId: string;
+    /**
+     * - The fiat currency the customer wants to use for the transaction.
+     */
+    baseCurrency: MoonPayFiatCurrencyDetails;
+    baseCurrencyCode: string;
+    /**
+     * - A positive number representing how much the customer wants to spend. The minimum amount is 20.
+     */
+    baseCurrencyAmount: number;
+    /**
+     * - The cryptocurrency the customer wants to purchase.
+     */
+    quoteCurrency: MoonPayCryptoCurrencyDetails;
+    quoteCurrencyCode: string;
+    /**
+     * - A positive number representing the amount of cryptocurrency the customer will receive. Set when the purchase of cryptocurrency has been executed.
+     */
+    quoteCurrencyAmount: number;
+    /**
+     * - The price of the crypto the customer will receive
+     */
+    quoteCurrencyPrice: number;
+    /**
+     * - The transaction's payment method.
+     */
+    paymentMethod: string;
+    /**
+     * - A positive number representing the fee for the transaction.
+     */
+    feeAmount: number;
+    extraFeePercentage: number;
+    extraFeeAmount: number;
+    /**
+     * - A positive number representing the network fee for the transaction. It is added to baseCurrencyAmount, feeAmount and extraFeeAmount when the customer's card is charged.
+     */
+    networkFeeAmount: number;
+    networkFeeAmountNonRefundable: boolean;
+    totalAmount: number;
+    externalId: string | null;
+    externalCustomerId: string | null;
+    /**
+     * - The signature for executing the quote for fixed flow
+     */
+    signature: string | null;
+    /**
+     * - The time in seconds until the quote expires.
+     */
+    expiresIn: number | null;
+    /**
+     * - Time at which the quote expires. Returned as an ISO 8601 string.
+     */
+    expiresAt: string | null;
+};
+export type MoonPaySellQuoteMetadata = {
+    /**
+     * - Fiat currency the customer wants to get.
+     */
+    quoteCurrencyCode: string;
+    /**
+     * - The fiat currency the customer wants to use for the transaction.
+     */
+    quoteCurrency: MoonPayFiatCurrencyDetails;
+    /**
+     * - Crypto currency the customer wants to sell.
+     */
+    baseCurrencyCode: string;
+    /**
+     * - The cryptocurrency the customer wants to sell.
+     */
+    baseCurrency: MoonPayCryptoCurrencyDetails;
+    /**
+     * - A positive number representing how much the customer wants to sell.
+     */
+    baseCurrencyAmount: number;
+    /**
+     * - A positive number representing the amount of cryptocurrency the customer will receive.
+     */
+    quoteCurrencyAmount: number;
+    /**
+     * - The price of the crypto the customer wants to sell
+     */
+    baseCurrencyPrice: number;
+    /**
+     * - A positive number representing the fee for the transaction.
+     */
+    feeAmount: number;
+    /**
+     * - A positive number representing your extra fee for the transaction.
+     */
+    extraFeeAmount: number;
+    /**
+     * - The transaction's payout method.
+     */
+    payoutMethod: string;
+    /**
+     * - The signature for executing the quote for fixed flow
+     */
+    signature: string | null;
+    /**
+     * - The time in seconds until the quote expires.
+     */
+    expiresIn: number | null;
+    /**
+     * - Time at which the quote expires. Returned as an ISO 8601 string.
+     */
+    expiresAt: string | null;
+};
 export type MoonPayTransactionDetail = FiatTransactionDetail & {
     metadata: MoonPayBuyTransaction | MoonPaySellTransaction;
 };
@@ -662,6 +828,18 @@ export type MoonPaySupportedFiatCurrency = SupportedFiatCurrency & {
 };
 export type MoonPayBuyOptions = BuyOptions & {
     config?: Omit<MoonPayBuyParams, "currencyCode" | "baseCurrencyCode" | "baseCurrencyAmount">;
+};
+export type MoonPayQuoteBuyOptions = Omit<BuyOptions, "recipient"> & {
+    config?: MoonPayQuoteBuyParams;
+};
+export type MoonPayBuyQuote = FiatQuote & {
+    metadata: MoonPayBuyQuoteMetadata;
+};
+export type MoonPayQuoteSellOptions = Omit<SellCommonOptions, "refundAddress"> & SellExactCryptoAmountOptions & {
+    config?: MoonPayQuoteSellParams;
+};
+export type MoonPaySellQuote = FiatQuote & {
+    metadata: MoonPaySellQuoteMetadata;
 };
 export type MoonPaySellOptions = SellOptions & {
     config?: Omit<MoonPaySellParams, "baseCurrencyCode" | "quoteCurrencyCode" | "baseCurrencyAmount">;
