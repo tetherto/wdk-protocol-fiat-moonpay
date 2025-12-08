@@ -23,6 +23,9 @@ import BigNumber from "bignumber.js";
 
 /** @typedef {import("@tetherto/wdk-wallet/protocols").BuyOptions} BuyOptions */
 /** @typedef {import("@tetherto/wdk-wallet/protocols").SellOptions} SellOptions */
+/** @typedef {import("@tetherto/wdk-wallet/protocols").SellCommonOptions} SellCommonOptions */
+/** @typedef {import("@tetherto/wdk-wallet/protocols").SellExactCryptoAmountOptions} SellExactCryptoAmountOptions */
+/** @typedef {import('@tetherto/wdk-wallet/protocols').FiatQuote} FiatQuote */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').FiatTransactionStatus} FiatTransactionStatus */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').FiatTransactionDetail} FiatTransactionDetail */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupportedCountry} SupportedCountry */
@@ -81,6 +84,20 @@ import BigNumber from "bignumber.js";
  *   externalCustomerId?: string,
  *   paymentMethod?: string
  * }} MoonPaySellParams
+ */
+
+/**
+ * @typedef {Object} MoonPayQuoteBuyParams
+ * @property {number} [extraFeePercentage] - A positive integer representing your extra fee percentage for the transaction. The minimum is 0 and the maximum is 10. If you don't provide it, we'll use the default value set to your account.
+ * @property {string} [paymentMethod] - The transaction's payment method.
+ * @property {boolean} [areFeesIncluded] - A boolean indicating whether baseCurrencyAmount should include extra fees. Defaults to false.
+ * @property {string} [walletAddress] - Wallet address of the customer who requested the quote.
+ */
+
+/**
+ * @typedef {Object} MoonPayQuoteSellParams
+ * @property {number} [extraFeePercentage] - A positive integer representing your extra fee percentage for the transaction. The minimum is 0 and the maximum is 10. If you don't provide it, we'll use the default value set to your account.
+ * @property {string} [payoutMethod] - The transaction's payment method.
  */
 
 /**
@@ -243,6 +260,47 @@ import BigNumber from "bignumber.js";
  */
 
 /**
+ * @typedef {Object} MoonPayBuyQuoteMetadata
+ * @property {string} accountId - ID of your business account
+ * @property {MoonPayFiatCurrencyDetails} baseCurrency - The fiat currency the customer wants to use for the transaction.
+ * @property {string} baseCurrencyCode
+ * @property {number} baseCurrencyAmount - A positive number representing how much the customer wants to spend. The minimum amount is 20.
+ * @property {MoonPayCryptoCurrencyDetails} quoteCurrency - The cryptocurrency the customer wants to purchase.
+ * @property {string} quoteCurrencyCode
+ * @property {number} quoteCurrencyAmount - A positive number representing the amount of cryptocurrency the customer will receive. Set when the purchase of cryptocurrency has been executed.
+ * @property {number} quoteCurrencyPrice - The price of the crypto the customer will receive
+ * @property {string} paymentMethod - The transaction's payment method.
+ * @property {number} feeAmount - A positive number representing the fee for the transaction.
+ * @property {number} extraFeePercentage
+ * @property {number} extraFeeAmount
+ * @property {number} networkFeeAmount - A positive number representing the network fee for the transaction. It is added to baseCurrencyAmount, feeAmount and extraFeeAmount when the customer's card is charged.
+ * @property {boolean} networkFeeAmountNonRefundable
+ * @property {number} totalAmount
+ * @property {string | null} externalId
+ * @property {string | null} externalCustomerId
+ * @property {string | null} signature - The signature for executing the quote for fixed flow
+ * @property {number | null} expiresIn - The time in seconds until the quote expires.
+ * @property {string | null} expiresAt - Time at which the quote expires. Returned as an ISO 8601 string.
+ */
+
+/**
+ * @typedef {Object} MoonPaySellQuoteMetadata
+ * @property {string} quoteCurrencyCode - Fiat currency the customer wants to get.
+ * @property {MoonPayFiatCurrencyDetails} quoteCurrency - The fiat currency the customer wants to use for the transaction.
+ * @property {string} baseCurrencyCode - Crypto currency the customer wants to sell.
+ * @property {MoonPayCryptoCurrencyDetails} baseCurrency - The cryptocurrency the customer wants to sell.
+ * @property {number} baseCurrencyAmount - A positive number representing how much the customer wants to sell.
+ * @property {number} quoteCurrencyAmount - A positive number representing the amount of cryptocurrency the customer will receive.
+ * @property {number} baseCurrencyPrice - The price of the crypto the customer wants to sell
+ * @property {number} feeAmount - A positive number representing the fee for the transaction.
+ * @property {number} extraFeeAmount - A positive number representing your extra fee for the transaction.
+ * @property {string} payoutMethod - The transaction's payout method.
+ * @property {string | null} signature - The signature for executing the quote for fixed flow
+ * @property {number | null} expiresIn - The time in seconds until the quote expires.
+ * @property {string | null} expiresAt - Time at which the quote expires. Returned as an ISO 8601 string.
+ */
+
+/**
  * @typedef {FiatTransactionDetail & { metadata: MoonPayBuyTransaction | MoonPaySellTransaction }} MoonPayTransactionDetail
  */
 
@@ -260,6 +318,22 @@ import BigNumber from "bignumber.js";
 
 /**
  * @typedef {BuyOptions & { config?: Omit<MoonPayBuyParams, 'currencyCode' | 'baseCurrencyCode' | 'baseCurrencyAmount'> }} MoonPayBuyOptions
+ */
+
+/**
+ * @typedef {Omit<BuyOptions, 'recipient'> & { config?: MoonPayQuoteBuyParams }} MoonPayQuoteBuyOptions
+ */
+
+/**
+ * @typedef {FiatQuote & { metadata: MoonPayBuyQuoteMetadata }} MoonPayBuyQuote
+ */
+
+/**
+ * @typedef {Omit<SellCommonOptions, 'refundAddress'> & SellExactCryptoAmountOptions & { config?: MoonPayQuoteSellParams }} MoonPayQuoteSellOptions
+ */
+
+/**
+ * @typedef {FiatQuote & { metadata: MoonPaySellQuoteMetadata }} MoonPaySellQuote
  */
 
 /**
@@ -353,6 +427,127 @@ export default class MoonPayProtocol extends FiatProtocol {
   }
 
   /**
+   * Gets a quote for a crypto asset purchase.
+   * @override
+   * @param {MoonPayQuoteBuyOptions} options 
+   * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
+   */
+  async quoteBuy(options) {
+    const { cryptoAsset, fiatCurrency, config } = options
+
+    const params = {
+      ...config,
+      baseCurrencyCode: fiatCurrency
+    }
+
+    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
+
+    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
+    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
+
+    if (!cryptoInfo || !fiatInfo) {
+      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
+    }
+
+    if ('cryptoAmount' in options) {
+      params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
+        .shiftedBy(-1 * cryptoInfo.decimals)
+        .toFixed(cryptoInfo.precision, 1)
+    } else {
+      params.baseCurrencyAmount = new BigNumber(options.fiatAmount)
+        .shiftedBy(-1 * fiatInfo.decimals)
+        .toFixed(fiatInfo.precision, 1)
+    }
+
+    const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_API_DOMAIN)
+
+    url.searchParams.append('apiKey', this._apiKey)
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value)
+    })
+
+    const resp = await fetch(url.toString(), {
+      headers: { accept: 'application/json' }
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Failed to fetch MoonPay buy quote: ${resp.status} ${resp.statusText}`)
+    }
+
+    const quote = await resp.json()
+
+    const cryptoAmount = new BigNumber(quote.quoteCurrencyAmount).shiftedBy(cryptoInfo.decimals)
+    const fiatAmount = new BigNumber(quote.baseCurrencyAmount).shiftedBy(fiatInfo.decimals)
+    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).plus(quote.networkFeeAmount).shiftedBy(fiatInfo.decimals)
+
+    return {
+      cryptoAmount: BigInt(cryptoAmount.toFixed()),
+      fiatAmount: BigInt(fiatAmount.toFixed()),
+      fee: BigInt(totalFee.toFixed()),
+      rate: quote.quoteCurrencyPrice.toString(),
+      metadata: quote
+    }
+  }
+
+  /**
+   * Gets a quote for a crypto asset sale.
+   * @override
+   * @param {MoonPayQuoteSellOptions} options
+   * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
+
+   */
+  async quoteSell(options) {
+    const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
+
+    const params = {
+      ...config,
+      quoteCurrencyCode: fiatCurrency
+    }
+
+    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
+
+    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
+    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
+
+    if (!cryptoInfo || !fiatInfo) {
+      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
+    }
+
+    params.baseCurrencyAmount = new BigNumber(cryptoAmount)
+      .shiftedBy(-1 * cryptoInfo.decimals)
+      .toFixed(cryptoInfo.precision, 1)
+
+    const url = new URL(`v3/currencies/${cryptoAsset}/sell_quote`, MOONPAY_API_DOMAIN)
+
+    url.searchParams.append('apiKey', this._apiKey)
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, value)
+    })
+
+    const resp = await fetch(url.toString(), {
+      headers: { accept: 'application/json' }
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Failed to fetch MoonPay sell quote: ${resp.status} ${resp.statusText}`)
+    }
+
+    const quote = await resp.json()
+
+    const quotedCryptoAmount = new BigNumber(quote.baseCurrencyAmount).shiftedBy(cryptoInfo.decimals)
+    const quotedFiatAmount = new BigNumber(quote.quoteCurrencyAmount).shiftedBy(fiatInfo.decimals)
+    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).shiftedBy(fiatInfo.decimals)
+
+    return {
+      cryptoAmount: BigInt(quotedCryptoAmount.toFixed()),
+      fiatAmount: BigInt(quotedFiatAmount.toFixed()),
+      fee: BigInt(totalFee.toFixed()),
+      rate: quote.baseCurrencyPrice.toString(),
+      metadata: quote
+    }
+  }
+
+  /**
    * Generates a widget URL for a user to sell a crypto asset for fiat currency.
    * @override
    * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
@@ -419,6 +614,10 @@ export default class MoonPayProtocol extends FiatProtocol {
         accept: 'application/json'
       }
     })
+
+    if (!resp.ok) {
+      throw new Error(`Failed to fetch MoonPay transaction detail: ${resp.status} ${resp.statusText}`)
+    }
 
     const moonPayTransaction = await resp.json()
     const cryptoAsset = direction === 'buy' ? moonPayTransaction.currencyId : moonPayTransaction.baseCurrencyId
