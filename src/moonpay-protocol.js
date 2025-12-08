@@ -390,7 +390,8 @@ export default class MoonPayProtocol extends FiatProtocol {
     const params = {
       ...config,
       currencyCode: cryptoAsset,
-      baseCurrencyCode: fiatCurrency
+      baseCurrencyCode: fiatCurrency,
+      apiKey: this._apiKey
     }
 
     const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
@@ -402,13 +403,18 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
+    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
+    if (fiatDecimals == null) {
+      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
+    }
+
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
         .toFixed(cryptoInfo.precision, 1)
     } else {
       params.baseCurrencyAmount = new BigNumber(options.fiatAmount)
-        .shiftedBy(-1 * fiatInfo.decimals)
+        .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     }
 
@@ -449,13 +455,18 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
+    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
+    if (fiatDecimals == null) {
+      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
+    }
+
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
         .toFixed(cryptoInfo.precision, 1)
     } else {
       params.baseCurrencyAmount = new BigNumber(options.fiatAmount)
-        .shiftedBy(-1 * fiatInfo.decimals)
+        .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     }
 
@@ -477,8 +488,8 @@ export default class MoonPayProtocol extends FiatProtocol {
     const quote = await resp.json()
 
     const cryptoAmount = new BigNumber(quote.quoteCurrencyAmount).shiftedBy(cryptoInfo.decimals)
-    const fiatAmount = new BigNumber(quote.baseCurrencyAmount).shiftedBy(fiatInfo.decimals)
-    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).plus(quote.networkFeeAmount).shiftedBy(fiatInfo.decimals)
+    const fiatAmount = new BigNumber(quote.baseCurrencyAmount).shiftedBy(fiatDecimals)
+    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).plus(quote.networkFeeAmount).shiftedBy(fiatDecimals)
 
     return {
       cryptoAmount: BigInt(cryptoAmount.toFixed()),
@@ -513,6 +524,11 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
+    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
+    if (fiatDecimals == null) {
+      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
+    }
+
     params.baseCurrencyAmount = new BigNumber(cryptoAmount)
       .shiftedBy(-1 * cryptoInfo.decimals)
       .toFixed(cryptoInfo.precision, 1)
@@ -535,8 +551,8 @@ export default class MoonPayProtocol extends FiatProtocol {
     const quote = await resp.json()
 
     const quotedCryptoAmount = new BigNumber(quote.baseCurrencyAmount).shiftedBy(cryptoInfo.decimals)
-    const quotedFiatAmount = new BigNumber(quote.quoteCurrencyAmount).shiftedBy(fiatInfo.decimals)
-    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).shiftedBy(fiatInfo.decimals)
+    const quotedFiatAmount = new BigNumber(quote.quoteCurrencyAmount).shiftedBy(fiatDecimals)
+    const totalFee = new BigNumber(quote.feeAmount).plus(quote.extraFeeAmount).shiftedBy(fiatDecimals)
 
     return {
       cryptoAmount: BigInt(quotedCryptoAmount.toFixed()),
@@ -559,7 +575,8 @@ export default class MoonPayProtocol extends FiatProtocol {
     const params = {
       ...config,
       baseCurrencyCode: cryptoAsset,
-      quoteCurrencyCode: fiatCurrency
+      quoteCurrencyCode: fiatCurrency,
+      apiKey: this._apiKey
     }
 
     const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
@@ -567,13 +584,18 @@ export default class MoonPayProtocol extends FiatProtocol {
     const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
     const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
 
+    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
+    if (fiatDecimals == null) {
+      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
+    }
+
     if ('cryptoAmount' in options) {
       params.baseCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
-        .toFixed(cryptoInfo, 1)
+        .toFixed(cryptoInfo.precision, 1)
     } else {
       params.quoteCurrencyAmount = new BigNumber(options.fiatAmount)
-        .shiftedBy(-1 * fiatInfo.decimals)
+        .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     }
 
