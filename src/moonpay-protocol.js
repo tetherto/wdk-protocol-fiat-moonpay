@@ -121,7 +121,7 @@ import BigNumber from "bignumber.js";
  * @property {string} name - The currency's name.
  * @property {string} code - The currency's code.
  * @property {number} precision - The currency's precision (number of digits after decimal point).
- * @property {number} decimals - The currency's decimals.
+ * @property {number | null} decimals - The currency's decimals.
  * @property {number | null} minBuyAmount - Represents the minimum transaction buy amount when using this currency as a base currency.
  * @property {number | null} maxBuyAmount - Represents the maximum transaction buy amount when using this currency as a base currency.
  * @property {boolean} isSellSupported - Whether sales for this currency are supported.
@@ -418,10 +418,10 @@ export default class MoonPayProtocol extends FiatProtocol {
         .toFixed(fiatInfo.precision, 1)
     }
 
-    if (this._account) {
-      params.walletAddress = await this._account.getAddress()
-    } else if (recipient) {
+    if (recipient) {
       params.walletAddress = recipient
+    } else if (this._account) {
+      params.walletAddress = await this._account.getAddress()
     }
 
     const generatedUrl = this._moonPay.url.generate({
@@ -584,6 +584,10 @@ export default class MoonPayProtocol extends FiatProtocol {
     const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
     const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
 
+    if (!cryptoInfo || !fiatInfo) {
+      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
+    }
+
     const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
     if (fiatDecimals == null) {
       throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
@@ -599,10 +603,10 @@ export default class MoonPayProtocol extends FiatProtocol {
         .toFixed(fiatInfo.precision, 1)
     }
 
-    if (this._account) {
-      params.walletAddress = await this._account.getAddress()
-    } else if (refundAddress) {
+    if (refundAddress) {
       params.refundWalletAddress = refundAddress
+    } else if (this._account) {
+      params.refundWalletAddress = await this._account.getAddress()
     }
 
     const generatedUrl = this._moonPay.url.generate({
