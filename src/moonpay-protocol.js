@@ -359,6 +359,20 @@ function toWdkStatus(moonPayStatus) {
   }
 }
 
+/**
+ * Gets the decimals for a fiat currency, falling back to precision.
+ * @param {MoonPayFiatCurrencyDetails} currencyDetail
+ * @returns {number}
+ */
+function getFiatDecimals(currencyDetail) {
+  const decimals = currencyDetail.decimals ?? currencyDetail.precision
+
+  if (typeof decimals !== 'number') {
+    throw new Error(`Could not determine decimals for fiat currency: ${currencyDetail.code}`)
+  }
+  return decimals
+}
+
 const MOONPAY_API_DOMAIN = 'https://api.moonpay.com/'
 const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 
@@ -403,10 +417,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
-    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
-    if (fiatDecimals == null) {
-      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
-    }
+    const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
@@ -455,10 +466,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
-    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
-    if (fiatDecimals == null) {
-      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
-    }
+    const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
@@ -524,10 +532,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
-    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
-    if (fiatDecimals == null) {
-      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
-    }
+    const fiatDecimals = getFiatDecimals(fiatInfo)
 
     params.baseCurrencyAmount = new BigNumber(cryptoAmount)
       .shiftedBy(-1 * cryptoInfo.decimals)
@@ -588,10 +593,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
 
-    const fiatDecimals = fiatInfo.decimals ?? fiatInfo.precision
-    if (fiatDecimals == null) {
-      throw new Error(`Could not determine decimals or precision for fiat currency: ${fiatCurrency}`)
-    }
+    const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options) {
       params.baseCurrencyAmount = new BigNumber(options.cryptoAmount)
@@ -719,14 +721,12 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     return allCurrencies
       .filter((currency) => currency.type === 'fiat')
-      .map((currencyDetail) => {
-        return {
-          code: currencyDetail.code,
-          decimals: currencyDetail.decimals,
-          name: currencyDetail.name,
-          metadata: currencyDetail
-        }
-      })
+      .map((currencyDetail) => ({
+        code: currencyDetail.code,
+        decimals: getFiatDecimals(currencyDetail),
+        name: currencyDetail.name,
+        metadata: currencyDetail
+      }))
   }
 
   /**

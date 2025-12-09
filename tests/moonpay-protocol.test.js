@@ -255,7 +255,7 @@ describe('MoonPayProtocol', () => {
         cryptoAsset: 'eth',
         fiatCurrency: 'bad_fiat',
         fiatAmount: 1000_00n
-      })).rejects.toThrow('Could not determine decimals or precision for fiat currency: bad_fiat')
+      })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
   })
@@ -478,7 +478,7 @@ describe('MoonPayProtocol', () => {
         cryptoAsset: 'eth',
         fiatCurrency: 'bad_fiat',
         cryptoAmount: 1_000_000_000_000_000_000n
-      })).rejects.toThrow('Could not determine decimals or precision for fiat currency: bad_fiat')
+      })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
   })
@@ -620,7 +620,7 @@ describe('MoonPayProtocol', () => {
         cryptoAsset: 'eth',
         fiatCurrency: 'bad_fiat',
         fiatAmount: 1000_00n
-      })).rejects.toThrow('Could not determine decimals or precision for fiat currency: bad_fiat')
+      })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
       expect(global.fetch).toHaveBeenCalledTimes(1)
@@ -705,7 +705,7 @@ describe('MoonPayProtocol', () => {
         cryptoAsset: 'eth',
         fiatCurrency: 'bad_fiat',
         cryptoAmount: 1_000_000_000_000_000_000n
-      })).rejects.toThrow('Could not determine decimals or precision for fiat currency: bad_fiat')
+      })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
       expect(global.fetch).toHaveBeenCalledTimes(1)
@@ -801,28 +801,33 @@ describe('MoonPayProtocol', () => {
   })
 
   describe('getSupportedFiatCurrencies', () => {
-    test('should successfully return supported fiat currencies', async () => {
+    test('should successfully return supported fiat currencies, using precision as a fallback for decimals', async () => {
+      const validCurrencies = MOCK_CURRENCIES.filter(c => c.code !== 'bad_fiat')
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+        json: jest.fn().mockResolvedValue(validCurrencies)
       })
 
       const supportedFiat = await moonpay.getSupportedFiatCurrencies()
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(supportedFiat).toHaveLength(3)
+      expect(supportedFiat).toHaveLength(2)
       expect(supportedFiat[0].code).toBe('usd')
       expect(supportedFiat[0].name).toBe('US Dollar')
       expect(supportedFiat[0].decimals).toBe(2)
       expect(supportedFiat[1].code).toBe('eur')
       expect(supportedFiat[1].name).toBe('The Euro')
-      expect(supportedFiat[1].decimals).toBe(null)
+      expect(supportedFiat[1].decimals).toBe(2) // EUR has null decimals from API, but precision is 2
     })
-  })
 
-  describe('getSupportedCountries', () => {
-    test('should successfully return supported countries')
-    test('should ')
+    test('should throw an error if decimals cannot be determined from decimals or precision', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.getSupportedFiatCurrencies()).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
+    })
   })
 
   describe('getTransactionDetail', () => {
@@ -841,5 +846,9 @@ describe('MoonPayProtocol', () => {
       expect(details.fiatCurrency).toBe('usd')
       expect(details.metadata).toEqual(mockTx)
     })
+
+    // test('should fetch buy transaction by default when direction is not declared')
+    // test('should throw error when transaction fetch fails')
+    // test('should throw error when direction is invalid')
   })
 })
