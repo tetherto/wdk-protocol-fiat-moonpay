@@ -392,6 +392,18 @@ export default class MoonPayProtocol extends FiatProtocol {
     this._cacheThreshold = cacheTime
   }
 
+  async _getAssetDetails(cryptoAsset, fiatCurrency) {
+    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
+
+    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
+    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
+
+    if (!cryptoInfo || !fiatInfo) {
+      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
+    }
+    return { cryptoInfo, fiatInfo }
+  }
+
   /**
    * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
    * @override
@@ -408,14 +420,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       apiKey: this._apiKey
     }
 
-    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
-
-    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
-    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
-
-    if (!cryptoInfo || !fiatInfo) {
-      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
-    }
+    const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
@@ -457,14 +462,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       baseCurrencyCode: fiatCurrency
     }
 
-    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
-
-    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
-    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
-
-    if (!cryptoInfo || !fiatInfo) {
-      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
-    }
+    const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
@@ -523,14 +521,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       quoteCurrencyCode: fiatCurrency
     }
 
-    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
-
-    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
-    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
-
-    if (!cryptoInfo || !fiatInfo) {
-      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
-    }
+    const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
@@ -584,14 +575,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       apiKey: this._apiKey
     }
 
-    const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
-
-    const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
-    const fiatInfo = supportedAssets.find((asset) => asset.code === fiatCurrency)
-
-    if (!cryptoInfo || !fiatInfo) {
-      throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
-    }
+    const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
