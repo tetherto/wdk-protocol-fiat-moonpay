@@ -18,6 +18,10 @@ export default class MoonPayProtocol extends FiatProtocol {
         data: any;
     };
     _cacheThreshold: number;
+    _getAssetDetails(cryptoAsset: string, fiatCurrency: string): Promise<{
+        cryptoInfo: MoonPayCryptoCurrencyDetails;
+        fiatInfo: MoonPayFiatCurrencyDetails;
+    }>;
     /**
      * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
      * @override
@@ -262,7 +266,7 @@ export type MoonPayFiatCurrencyDetails = {
     /**
      * - The currency's decimals.
      */
-    decimals: number;
+    decimals: number | null;
     /**
      * - Represents the minimum transaction buy amount when using this currency as a base currency.
      */
