@@ -830,6 +830,57 @@ describe('MoonPayProtocol', () => {
     })
   })
 
+  describe('getSupportedCountries', () => {
+    test('should successfully return supported countries', async () => {
+      const MOCK_COUNTRIES = [
+        { alpha2: 'US', alpha3: 'USA', name: 'United States', isBuyAllowed: true, isSellAllowed: true },
+        { alpha3: 'CAN', name: 'Canada', isBuyAllowed: false, isSellAllowed: false } // No alpha2 to test fallback
+      ]
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_COUNTRIES)
+      })
+
+      const countries = await moonpay.getSupportedCountries()
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(countries).toHaveLength(2)
+
+      expect(countries[0].code).toBe('US')
+      expect(countries[0].name).toBe('United States')
+      expect(countries[0].isBuyAllowed).toBe(true)
+      expect(countries[0].isSellAllowed).toBe(true)
+      expect(countries[0].metadata).toEqual(MOCK_COUNTRIES[0])
+
+      expect(countries[1].code).toBe('CAN')
+      expect(countries[1].name).toBe('Canada')
+      expect(countries[1].isBuyAllowed).toBe(false)
+      expect(countries[1].isSellAllowed).toBe(false)
+      expect(countries[1].metadata).toEqual(MOCK_COUNTRIES[1])
+    })
+
+    test('should throw error when fetch fails', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Error'
+      })
+
+      await expect(moonpay.getSupportedCountries()).rejects.toThrow('Failed to fetch supported countries: 500 Error')
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error when data is invalid', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: 'this is not an array' })
+      })
+
+      await expect(moonpay.getSupportedCountries()).rejects.toThrow('Failed to fetch supported countries')
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+  })
+
   describe('getTransactionDetail', () => {
     test('should fetch buy transaction details correctly', async () => {
       const mockTx = { id: 'tx123', status: 'completed', currencyId: 'eth', baseCurrencyId: 'usd' }
@@ -847,8 +898,69 @@ describe('MoonPayProtocol', () => {
       expect(details.metadata).toEqual(mockTx)
     })
 
-    // test('should fetch buy transaction by default when direction is not declared')
-    // test('should throw error when transaction fetch fails')
-    // test('should throw error when direction is invalid')
+    test('should fetch sell transaction details correctly', async () => {
+      const mockTx = { id: 'tx123', status: 'pending', baseCurrencyId: 'eth', quoteCurrencyId: 'usd' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockTx)
+      })
+
+      const details = await moonpay.getTransactionDetail('tx123', 'sell')
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/sell_transactions/tx123?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(details.status).toBe('in_progress')
+      expect(details.cryptoAsset).toBe('eth')
+      expect(details.fiatCurrency).toBe('usd')
+      expect(details.metadata).toEqual(mockTx)
+    })
+
+    test('should handle transaction status gracefully', async () => {
+      const mockTx = { id: 'tx123', status: 'unknown', currencyId: 'eth', baseCurrencyId: 'usd' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockTx)
+      })
+
+      const details = await moonpay.getTransactionDetail('tx123', 'buy')
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v1/transactions/tx123?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(details.status).toBe('in_progress')
+      expect(details.cryptoAsset).toBe('eth')
+      expect(details.fiatCurrency).toBe('usd')
+      expect(details.metadata).toEqual(mockTx)
+    })
+
+    test('should fetch buy transaction by default when direction is not declared', async () => {
+      const mockTx = { id: 'tx123', status: 'failed', currencyId: 'eth', baseCurrencyId: 'usd' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockTx)
+      })
+
+      const details = await moonpay.getTransactionDetail('tx123') // No direction
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v1/transactions/tx123?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(details.status).toBe('failed')
+    })
+
+    test('should throw error when transaction fetch fails', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Error'
+      })
+
+      await expect(moonpay.getTransactionDetail('tx123')).rejects.toThrow('Failed to fetch MoonPay transaction detail: 500 Error')
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v1/transactions/tx123?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error when direction is invalid', async () => {
+      global.fetch = jest.fn()
+
+      await expect(moonpay.getTransactionDetail('tx123', 'invalid_direction')).rejects.toThrow('Invalid direction')
+
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
   })
 })
