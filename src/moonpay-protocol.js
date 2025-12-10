@@ -14,9 +14,9 @@
 
 'use strict'
 
-import { MoonPay } from "@moonpay/moonpay-node";
-import { FiatProtocol } from "@tetherto/wdk-wallet/protocols";
-import BigNumber from "bignumber.js";
+import { MoonPay } from '@moonpay/moonpay-node'
+import { FiatProtocol } from '@tetherto/wdk-wallet/protocols'
+import BigNumber from 'bignumber.js'
 
 /** @typedef {import('@tetherto/wdk-wallet').IWalletAccount} IWalletAccount */
 /** @typedef {import('@tetherto/wdk-wallet').IWalletAccountReadOnly} IWalletAccountReadOnly */
@@ -345,17 +345,17 @@ import BigNumber from "bignumber.js";
  * @param {MoonPayTransactionStatus} moonPayStatus - The status from the MoonPay API.
  * @returns {FiatTransactionStatus} The standardized status.
  */
-function toWdkStatus(moonPayStatus) {
+function toWdkStatus (moonPayStatus) {
   switch (moonPayStatus) {
     case 'completed':
-      return 'completed';
+      return 'completed'
     case 'failed':
-      return 'failed';
+      return 'failed'
     case 'pending':
     case 'waitingForDeposit':
-      return 'in_progress';
+      return 'in_progress'
     default:
-      return 'in_progress';
+      return 'in_progress'
   }
 }
 
@@ -364,7 +364,7 @@ function toWdkStatus(moonPayStatus) {
  * @param {MoonPayFiatCurrencyDetails} currencyDetail
  * @returns {number}
  */
-function getFiatDecimals(currencyDetail) {
+function getFiatDecimals (currencyDetail) {
   const decimals = currencyDetail.decimals ?? currencyDetail.precision
 
   if (typeof decimals !== 'number') {
@@ -384,7 +384,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {number} [config.cacheTime]
    * @param {IWalletAccount | IWalletAccountReadOnly} [account]
    */
-  constructor({ secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }, account) {
+  constructor ({ secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }, account) {
     super(account)
     this._moonPay = new MoonPay(secretKey)
     this._apiKey = apiKey
@@ -392,7 +392,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     this._cacheThreshold = cacheTime
   }
 
-  async _getAssetDetails(cryptoAsset, fiatCurrency) {
+  async _getAssetDetails (cryptoAsset, fiatCurrency) {
     const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
 
     const cryptoInfo = supportedAssets.find((asset) => asset.code === cryptoAsset)
@@ -410,7 +410,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {MoonPayBuyOptions} options
    * @returns {Promise<string>} The URL for the user to complete the purchase.
    */
-  async buy(options) {
+  async buy (options) {
     const { cryptoAsset, fiatCurrency, recipient, config } = options
 
     const params = {
@@ -451,10 +451,10 @@ export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Gets a quote for a crypto asset purchase.
    * @override
-   * @param {MoonPayQuoteBuyOptions} options 
+   * @param {MoonPayQuoteBuyOptions} options
    * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
    */
-  async quoteBuy(options) {
+  async quoteBuy (options) {
     const { cryptoAsset, fiatCurrency, config } = options
 
     const params = {
@@ -513,7 +513,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
 
    */
-  async quoteSell(options) {
+  async quoteSell (options) {
     const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
 
     const params = {
@@ -565,7 +565,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
    * @returns {Promise<string>} The URL for the user to complete the sale.
    */
-  async sell(options) {
+  async sell (options) {
     const { cryptoAsset, fiatCurrency, refundAddress, config } = options
 
     const params = {
@@ -610,7 +610,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {'buy' | 'sell'} [direction] - The direction of the transaction.
    * @returns {Promise<MoonPayTransactionDetail>} The transaction details.
    */
-  async getTransactionDetail(txId, direction = 'buy') {
+  async getTransactionDetail (txId, direction = 'buy') {
     if (!['buy', 'sell'].includes(direction)) {
       throw new Error('Invalid direction')
     }
@@ -648,7 +648,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @private
    * @returns {Promise<Array<MoonPayCryptoCurrencyDetails | MoonPayFiatCurrencyDetails>>}
    */
-  async _fetchAndCacheSupportedCurrencies() {
+  async _fetchAndCacheSupportedCurrencies () {
     const now = Date.now()
 
     if (!this._supportedCurrenciesCache || (now - this._supportedCurrenciesCache.timestamp >= this._cacheThreshold)) {
@@ -679,7 +679,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @returns {Promise<MoonPaySupportedCryptoAsset[]>} An array of supported crypto assets.
    */
-  async getSupportedCryptoAssets() {
+  async getSupportedCryptoAssets () {
     const allCurrencies = await this._fetchAndCacheSupportedCurrencies()
 
     return allCurrencies
@@ -700,7 +700,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @returns {Promise<MoonPaySupportedFiatCurrency[]>} An array of supported fiat currencies.
    */
-  async getSupportedFiatCurrencies() {
+  async getSupportedFiatCurrencies () {
     const allCurrencies = await this._fetchAndCacheSupportedCurrencies()
 
     return allCurrencies
@@ -718,7 +718,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @returns {Promise<MoonPaySupportedCountry[]>} An array of supported countries.
    */
-  async getSupportedCountries() {
+  async getSupportedCountries () {
     const url = new URL('v3/countries', MOONPAY_API_DOMAIN)
 
     url.searchParams.append('apiKey', this._apiKey)
