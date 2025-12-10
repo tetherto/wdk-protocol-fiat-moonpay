@@ -440,12 +440,10 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.walletAddress = await this._account.getAddress()
     }
 
-    const generatedUrl = this._moonPay.url.generate({
+    return this._moonPay.url.generate({
       flow: 'buy',
       params
     })
-
-    return this._moonPay.url.generateSignature(generatedUrl, { returnFullUrl: true })
   }
 
   /**
@@ -595,12 +593,10 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.refundWalletAddress = await this._account.getAddress()
     }
 
-    const generatedUrl = this._moonPay.url.generate({
+    return this._moonPay.url.generate({
       flow: 'sell',
       params
     })
-
-    return this._moonPay.url.generateSignature(generatedUrl, { returnFullUrl: true })
   }
 
   /**
