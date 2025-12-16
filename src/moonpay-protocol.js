@@ -22,12 +22,18 @@ import BigNumber from 'bignumber.js'
 /** @typedef {import('@tetherto/wdk-wallet').IWalletAccountReadOnly} IWalletAccountReadOnly */
 
 /** @typedef {import("@tetherto/wdk-wallet/protocols").BuyOptions} BuyOptions */
+/** @typedef {import("@tetherto/wdk-wallet/protocols").BuyResult} BuyResult */
+
 /** @typedef {import("@tetherto/wdk-wallet/protocols").SellOptions} SellOptions */
 /** @typedef {import("@tetherto/wdk-wallet/protocols").SellCommonOptions} SellCommonOptions */
 /** @typedef {import("@tetherto/wdk-wallet/protocols").SellExactCryptoAmountOptions} SellExactCryptoAmountOptions */
+/** @typedef {import("@tetherto/wdk-wallet/protocols").SellResult} SellResult */
+
 /** @typedef {import('@tetherto/wdk-wallet/protocols').FiatQuote} FiatQuote */
+
 /** @typedef {import('@tetherto/wdk-wallet/protocols').FiatTransactionStatus} FiatTransactionStatus */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').FiatTransactionDetail} FiatTransactionDetail */
+
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupportedCountry} SupportedCountry */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupportedFiatCurrency} SupportedFiatCurrency */
 /** @typedef {import('@tetherto/wdk-wallet/protocols').SupportedCryptoAsset} SupportedCryptoAsset */
@@ -300,45 +306,25 @@ import BigNumber from 'bignumber.js'
  * @property {string | null} expiresAt - Time at which the quote expires. Returned as an ISO 8601 string.
  */
 
-/**
- * @typedef {FiatTransactionDetail & { metadata: MoonPayBuyTransaction | MoonPaySellTransaction }} MoonPayTransactionDetail
- */
+/** @typedef {FiatTransactionDetail & { metadata: MoonPayBuyTransaction | MoonPaySellTransaction }} MoonPayTransactionDetail */
 
-/**
- * @typedef {SupportedCountry & { metadata: MoonPayCountryDetail }} MoonPaySupportedCountry
- */
+/** @typedef {SupportedCountry & { metadata: MoonPayCountryDetail }} MoonPaySupportedCountry */
 
-/**
- * @typedef {SupportedCryptoAsset & { metadata: MoonPayCryptoCurrencyDetails }} MoonPaySupportedCryptoAsset
- */
+/** @typedef {SupportedCryptoAsset & { metadata: MoonPayCryptoCurrencyDetails }} MoonPaySupportedCryptoAsset */
 
-/**
- * @typedef {SupportedFiatCurrency & { metadata: MoonPayFiatCurrencyDetails }} MoonPaySupportedFiatCurrency
- */
+/** @typedef {SupportedFiatCurrency & { metadata: MoonPayFiatCurrencyDetails }} MoonPaySupportedFiatCurrency */
 
-/**
- * @typedef {BuyOptions & { config?: Omit<MoonPayBuyParams, 'currencyCode' | 'baseCurrencyCode' | 'baseCurrencyAmount'> }} MoonPayBuyOptions
- */
+/** @typedef {BuyOptions & { config?: Omit<MoonPayBuyParams, 'currencyCode' | 'baseCurrencyCode' | 'baseCurrencyAmount'> }} MoonPayBuyOptions */
 
-/**
- * @typedef {Omit<BuyOptions, 'recipient'> & { config?: MoonPayQuoteBuyParams }} MoonPayQuoteBuyOptions
- */
+/** @typedef {Omit<BuyOptions, 'recipient'> & { config?: MoonPayQuoteBuyParams }} MoonPayQuoteBuyOptions */
 
-/**
- * @typedef {FiatQuote & { metadata: MoonPayBuyQuoteMetadata }} MoonPayBuyQuote
- */
+/** @typedef {FiatQuote & { metadata: MoonPayBuyQuoteMetadata }} MoonPayBuyQuote */
 
-/**
- * @typedef {Omit<SellCommonOptions, 'refundAddress'> & SellExactCryptoAmountOptions & { config?: MoonPayQuoteSellParams }} MoonPayQuoteSellOptions
- */
+/** @typedef {Omit<SellCommonOptions, 'refundAddress'> & SellExactCryptoAmountOptions & { config?: MoonPayQuoteSellParams }} MoonPayQuoteSellOptions */
 
-/**
- * @typedef {FiatQuote & { metadata: MoonPaySellQuoteMetadata }} MoonPaySellQuote
- */
+/** @typedef {FiatQuote & { metadata: MoonPaySellQuoteMetadata }} MoonPaySellQuote */
 
-/**
- * @typedef {SellOptions & { config?: Omit<MoonPaySellParams, 'baseCurrencyCode' | 'quoteCurrencyCode' | 'baseCurrencyAmount'> }} MoonPaySellOptions
- */
+/** @typedef {SellOptions & { config?: Omit<MoonPaySellParams, 'baseCurrencyCode' | 'quoteCurrencyCode' | 'baseCurrencyAmount'> }} MoonPaySellOptions */
 
 /**
  * Converts a MoonPay transaction status to a standardized WdkRampTransactionStatus.
@@ -381,7 +367,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {object} config - Configuration for the MoonPay handler.
    * @param {string} config.secretKey - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
    * @param {string} config.apiKey - Your publishable API key.
-   * @param {number} [config.cacheTime]
+   * @param {number} [config.cacheTime] - The duration in milliseconds to cache supported currencies.
    * @param {IWalletAccount | IWalletAccountReadOnly} [account]
    */
   constructor ({ secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }, account) {
@@ -392,6 +378,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     this._cacheThreshold = cacheTime
   }
 
+  /** @private */
   async _getAssetDetails (cryptoAsset, fiatCurrency) {
     const supportedAssets = await this._fetchAndCacheSupportedCurrencies()
 
@@ -408,7 +395,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
    * @override
    * @param {MoonPayBuyOptions} options
-   * @returns {Promise<string>} The URL for the user to complete the purchase.
+   * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
    */
   async buy (options) {
     const { cryptoAsset, fiatCurrency, recipient, config } = options
@@ -440,10 +427,14 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.walletAddress = await this._account.getAddress()
     }
 
-    return this._moonPay.url.generate({
+    const buyUrl = this._moonPay.url.generate({
       flow: 'buy',
       params
     })
+
+    return {
+      buyUrl
+    }
   }
 
   /**
@@ -478,7 +469,9 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value)
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, value)
+      }
     })
 
     const resp = await fetch(url.toString(), {
@@ -509,7 +502,6 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @param {MoonPayQuoteSellOptions} options
    * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
-
    */
   async quoteSell (options) {
     const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
@@ -531,7 +523,9 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value)
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, value)
+      }
     })
 
     const resp = await fetch(url.toString(), {
@@ -561,7 +555,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * Generates a widget URL for a user to sell a crypto asset for fiat currency.
    * @override
    * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
-   * @returns {Promise<string>} The URL for the user to complete the sale.
+   * @returns {Promise<SellResult>} The URL for the user to complete the sale.
    */
   async sell (options) {
     const { cryptoAsset, fiatCurrency, refundAddress, config } = options
@@ -593,10 +587,14 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.refundWalletAddress = await this._account.getAddress()
     }
 
-    return this._moonPay.url.generate({
+    const sellUrl = this._moonPay.url.generate({
       flow: 'sell',
       params
     })
+
+    return {
+      sellUrl
+    }
   }
 
   /**

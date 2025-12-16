@@ -1,14 +1,16 @@
 {
   "name": "wdk-protocol-fiat-moonpay",
   "version": "1.0.0-beta.1",
-  "description": "",
-  "homepage": "https://github.com/nampc1/wdk-protocol-fiat-moonpay-private#readme",
-  "bugs": {
-    "url": "https://github.com/nampc1/wdk-protocol-fiat-moonpay-private/issues"
-  },
+  "description": "A simple package that lets @tetherto/wdk-wallet accounts interact with the MoonPay protocol",
+  "keywords": [
+    "wdk",
+    "protocol",
+    "fiat",
+    "moonpay"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nampc1/wdk-protocol-fiat-moonpay-private.git"
+    "url": "git+https://github.com/tetherto/wdk-protocol-fiat-moonpay.git"
   },
   "license": "Apache-2.0",
   "author": "Tether",
