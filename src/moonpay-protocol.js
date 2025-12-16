@@ -642,13 +642,13 @@ export default class MoonPayProtocol extends FiatProtocol {
     }
 
     const moonPayTransaction = await resp.json()
-    const cryptoAsset = direction === 'buy' ? moonPayTransaction.currencyId : moonPayTransaction.baseCurrencyId
-    const fiatCurrency = direction === 'buy' ? moonPayTransaction.baseCurrencyId : moonPayTransaction.quoteCurrencyId
+    const cryptoAssetId = direction === 'buy' ? moonPayTransaction.currencyId : moonPayTransaction.baseCurrencyId
+    const fiatCurrencyId = direction === 'buy' ? moonPayTransaction.baseCurrencyId : moonPayTransaction.quoteCurrencyId
 
     return {
       status: toWdkStatus(moonPayTransaction.status),
-      cryptoAsset,
-      fiatCurrency,
+      cryptoAsset: cryptoAssetId,
+      fiatCurrency: fiatCurrencyId,
       metadata: moonPayTransaction
     }
   }

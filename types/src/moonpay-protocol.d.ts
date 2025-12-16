@@ -1,16 +1,20 @@
 export default class MoonPayProtocol extends FiatProtocol {
     /**
-     * @param {object} config - Configuration for the MoonPay handler.
-     * @param {string} config.secretKey - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
-     * @param {string} config.apiKey - Your publishable API key.
-     * @param {number} [config.cacheTime]
-     * @param {IWalletAccount | IWalletAccountReadOnly} [account]
+     * Creates a new read-only interface to interact with the MoonPay protocol.
+     *
+     * @overload
+     * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+     * @param {IWalletAccountReadOnly} [account] - The read-only wallet account to use to interact with the protocol.
      */
-    constructor({ secretKey, apiKey, cacheTime }: {
-        secretKey: string;
-        apiKey: string;
-        cacheTime?: number;
-    }, account?: IWalletAccount | IWalletAccountReadOnly);
+    constructor(config: MoonPayProtocolConfig, account?: IWalletAccountReadOnly);
+    /**
+     * Creates a new interface to interact with the MoonPay protocol.
+     *
+     * @overload
+     * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+     * @param {IWalletAccount} [account] - The wallet account to use to interact with the protocol.
+     */
+    constructor(config: MoonPayProtocolConfig, account?: IWalletAccount);
     _moonPay: MoonPay;
     _apiKey: string;
     _supportedCurrenciesCache: {
@@ -18,7 +22,7 @@ export default class MoonPayProtocol extends FiatProtocol {
         data: any;
     };
     _cacheThreshold: number;
-    _getAssetDetails(cryptoAsset: string, fiatCurrency: string): Promise<{
+    private _getAssetDetails(cryptoAsset: string, fiatCurrency: string): Promise<{
         cryptoInfo: MoonPayCryptoCurrencyDetails;
         fiatInfo: MoonPayFiatCurrencyDetails;
     }>;
@@ -26,9 +30,9 @@ export default class MoonPayProtocol extends FiatProtocol {
      * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
      * @override
      * @param {MoonPayBuyOptions} options
-     * @returns {Promise<string>} The URL for the user to complete the purchase.
+     * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
      */
-    override buy(options: MoonPayBuyOptions): Promise<string>;
+    override buy(options: MoonPayBuyOptions): Promise<BuyResult>;
     /**
      * Gets a quote for a crypto asset purchase.
      * @override
@@ -41,16 +45,15 @@ export default class MoonPayProtocol extends FiatProtocol {
      * @override
      * @param {MoonPayQuoteSellOptions} options
      * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
-  
      */
     override quoteSell(options: MoonPayQuoteSellOptions): Promise<MoonPaySellQuote>;
     /**
      * Generates a widget URL for a user to sell a crypto asset for fiat currency.
      * @override
      * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
-     * @returns {Promise<string>} The URL for the user to complete the sale.
+     * @returns {Promise<SellResult>} The URL for the user to complete the sale.
      */
-    override sell(options: MoonPaySellOptions): Promise<string>;
+    override sell(options: MoonPaySellOptions): Promise<SellResult>;
     /**
      * Retrieves the details of a specific transaction from the provider.
      * @override
@@ -87,9 +90,11 @@ export default class MoonPayProtocol extends FiatProtocol {
 export type IWalletAccount = import("@tetherto/wdk-wallet").IWalletAccount;
 export type IWalletAccountReadOnly = import("@tetherto/wdk-wallet").IWalletAccountReadOnly;
 export type BuyOptions = import("@tetherto/wdk-wallet/protocols").BuyOptions;
+export type BuyResult = import("@tetherto/wdk-wallet/protocols").BuyResult;
 export type SellOptions = import("@tetherto/wdk-wallet/protocols").SellOptions;
 export type SellCommonOptions = import("@tetherto/wdk-wallet/protocols").SellCommonOptions;
 export type SellExactCryptoAmountOptions = import("@tetherto/wdk-wallet/protocols").SellExactCryptoAmountOptions;
+export type SellResult = import("@tetherto/wdk-wallet/protocols").SellResult;
 export type FiatQuote = import("@tetherto/wdk-wallet/protocols").FiatQuote;
 export type FiatTransactionStatus = import("@tetherto/wdk-wallet/protocols").FiatTransactionStatus;
 export type FiatTransactionDetail = import("@tetherto/wdk-wallet/protocols").FiatTransactionDetail;
@@ -138,40 +143,88 @@ export type MoonPayWidgetUiParams = {
      */
     skipUnsupportedRegionScreen?: boolean;
 };
-export type MoonPayBuyParams = MoonPayWidgetUiParams & {
-    apiKey: string;
-    currencyCode?: string;
+export type MoonPayWidgetUiBuyParams = {
+    /**
+     * - The code of the cryptocurrency you would prefer the customer to purchase. The customer can still select another currency. If both currencyCode and defaultCurrencyCode are passed, currencyCode will take precedence.
+     */
     defaultCurrencyCode?: string;
+    /**
+     * - The cryptocurrency wallet address the purchased funds will be sent to. If you pass a valid wallet address the customer won't be prompted to enter one.
+     */
     walletAddress?: string;
+    /**
+     * - The secondary cryptocurrency wallet address identifier/memo for coins such as EOS, XLM, XRP and XMR. This parameter will be skipped if walletAddress or currencyCode is not passed.
+     */
     walletAddressTag?: string;
+    /**
+     * - A JSON string representing the wallet addresses you want to use for multiple cryptocurrencies. If the customer selects a cryptocurrency for which you have passed a valid wallet address, the customer won't be prompted to enter one. The currency code must be lowercase.
+     */
     walletAddresses?: string;
+    /**
+     * - A JSON string representing the wallet address tags you want to use for various cryptocurrencies. An example with EOS and XRP wallet address tags: {"eos":"myeostag","xrp":"0123456789"}.
+     */
     walletAddressTags?: string;
-    baseCurrencyCode?: string;
-    baseCurrencyAmount?: number;
-    quoteCurrencyAmount?: number;
+    /**
+     * - The contract address of the token you want pre-selected for the user in the widget. [Only supported for DeFi Buy integrations.]
+     */
     contractAddress?: string;
+    /**
+     * - Defines the network where the token contract exists (e.g., solana, ethereum). Must match the blockchain where the token contract is deployed. [Only supported for DeFi Buy integrations.]
+     */
     networkCode?: string;
+    /**
+     * - Set this parameter to true to lock the baseCurrencyAmount set for the customer and prevent them from modifying it. This parameter will be skipped if baseCurrencyAmount is not passed.
+     */
     lockAmount?: boolean;
+    /**
+     * - The customer's email address. If you pass a valid email address, the customer won't be prompted to enter one.
+     */
     email?: string;
+    /**
+     * - An identifier you would like to associate with the transaction. This identifier will be present whenever we pass you transaction data.
+     */
     externalTransactionId?: string;
+    /**
+     * - An identifier you would like to associate with the customer. This identifier will be present whenever we pass you customer data, allowing you to match our data with your own existing customer data.
+     */
     externalCustomerId?: string;
+    /**
+     * - Pre-select the payment method you want the customer to use.
+     */
     paymentMethod?: string;
 };
-export type MoonPaySellParams = MoonPayWidgetUiParams & {
-    apiKey: string;
-    baseCurrencyCode?: string;
+export type MoonPayBuyParams = MoonPayWidgetUiParams & MoonPayWidgetUiBuyParams;
+export type MoonPayWidgetUiSellParams = {
+    /**
+     * - The code of the cryptocurrency you would prefer the customer to sell. If you pass a defaultBaseCurrencyCode, the currency will be selected by default, but the customer will still be able to select another currency.
+     */
     defaultBaseCurrencyCode?: string;
-    refundWalletAddress?: string;
+    /**
+     * - A JSON string representing the wallet addresses you want to use for various cryptocurrencies in case we have to issue a refund. An example with BTC and BCH wallet addresses: {"btc": "tb1qst9rvjnhym6kwmdkwgfs4h5dtp7cau5346jp9x", "bch": "bchtest:qraax8trdwct02968swqf4mpq3y5msqp8y7tmalm77"}
+     */
     refundWalletAddresses?: string;
-    quoteCurrencyCode?: string;
-    baseCurrencyAmount?: number;
-    quoteCurrencyAmount?: number;
+    /**
+     * - Set this parameter to true to lock the baseCurrencyAmount set for the customer and prevent them from modifying it. This parameter will be skipped if baseCurrencyAmount is not passed.
+     */
     lockAmount?: boolean;
+    /**
+     * - The customer's email address. If you pass a valid email address, the customer won't be prompted to enter one.
+     */
     email?: string;
+    /**
+     * - An identifier you would like to associate with the transaction. This identifier will be present whenever we pass you transaction data.
+     */
     externalTransactionId?: string;
+    /**
+     * - An identifier you would like to associate with the customer. This identifier will be present whenever we pass you customer data, allowing you to match our data with your own existing customer data.
+     */
     externalCustomerId?: string;
+    /**
+     * - Pre-select the payout method you want the customer to use.
+     */
     paymentMethod?: string;
 };
+export type MoonPaySellParams = MoonPayWidgetUiParams & MoonPayWidgetUiSellParams;
 export type MoonPayQuoteBuyParams = {
     /**
      * - A positive integer representing your extra fee percentage for the transaction. The minimum is 0 and the maximum is 10. If you don't provide it, we'll use the default value set to your account.
@@ -831,7 +884,7 @@ export type MoonPaySupportedFiatCurrency = SupportedFiatCurrency & {
     metadata: MoonPayFiatCurrencyDetails;
 };
 export type MoonPayBuyOptions = BuyOptions & {
-    config?: Omit<MoonPayBuyParams, "currencyCode" | "baseCurrencyCode" | "baseCurrencyAmount">;
+    config?: MoonPayBuyParams;
 };
 export type MoonPayQuoteBuyOptions = Omit<BuyOptions, "recipient"> & {
     config?: MoonPayQuoteBuyParams;
@@ -846,7 +899,21 @@ export type MoonPaySellQuote = FiatQuote & {
     metadata: MoonPaySellQuoteMetadata;
 };
 export type MoonPaySellOptions = SellOptions & {
-    config?: Omit<MoonPaySellParams, "baseCurrencyCode" | "quoteCurrencyCode" | "baseCurrencyAmount">;
+    config?: MoonPaySellParams;
 };
-import { FiatProtocol } from "@tetherto/wdk-wallet/protocols";
-import { MoonPay } from "@moonpay/moonpay-node";
+export type MoonPayProtocolConfig = {
+    /**
+     * - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
+     */
+    secretKey: string;
+    /**
+     * - Your publishable API key.
+     */
+    apiKey: string;
+    /**
+     * - The duration in milliseconds to cache supported currencies.
+     */
+    cacheTime?: number;
+};
+import { FiatProtocol } from '@tetherto/wdk-wallet/protocols';
+import { MoonPay } from '@moonpay/moonpay-node';
