@@ -53,36 +53,35 @@ import BigNumber from 'bignumber.js'
  */
 
 /**
- * @typedef {MoonPayWidgetUiParams & {
- *   apiKey: string,
- *   defaultCurrencyCode?: string,
- *   walletAddress?: string,
- *   walletAddressTag?: string,
- *   walletAddresses?: string,
- *   walletAddressTags?: string,
- *   contractAddress?: string,
- *   networkCode?: string,
- *   lockAmount?: boolean,
- *   email?: string,
- *   externalTransactionId?: string,
- *   externalCustomerId?: string,
- *   paymentMethod?: string
- * }} MoonPayBuyParams
+ * @typedef {Object} MoonPayWidgetUiBuyParams
+ * @property {string} [defaultCurrencyCode] - The code of the cryptocurrency you would prefer the customer to purchase. The customer can still select another currency. If both currencyCode and defaultCurrencyCode are passed, currencyCode will take precedence.
+ * @property {string} [walletAddress] - The cryptocurrency wallet address the purchased funds will be sent to. If you pass a valid wallet address the customer won't be prompted to enter one.
+ * @property {string} [walletAddressTag] - The secondary cryptocurrency wallet address identifier/memo for coins such as EOS, XLM, XRP and XMR. This parameter will be skipped if walletAddress or currencyCode is not passed.
+ * @property {string} [walletAddresses] - A JSON string representing the wallet addresses you want to use for multiple cryptocurrencies. If the customer selects a cryptocurrency for which you have passed a valid wallet address, the customer won't be prompted to enter one. The currency code must be lowercase.
+ * @property {string} [walletAddressTags] - A JSON string representing the wallet address tags you want to use for various cryptocurrencies. An example with EOS and XRP wallet address tags: {"eos":"myeostag","xrp":"0123456789"}.
+ * @property {string} [contractAddress] - The contract address of the token you want pre-selected for the user in the widget. [Only supported for DeFi Buy integrations.]
+ * @property {string} [networkCode] - Defines the network where the token contract exists (e.g., solana, ethereum). Must match the blockchain where the token contract is deployed. [Only supported for DeFi Buy integrations.]
+ * @property {boolean} [lockAmount] - Set this parameter to true to lock the baseCurrencyAmount set for the customer and prevent them from modifying it. This parameter will be skipped if baseCurrencyAmount is not passed.
+ * @property {string} [email] - The customer's email address. If you pass a valid email address, the customer won't be prompted to enter one.
+ * @property {string} [externalTransactionId] - An identifier you would like to associate with the transaction. This identifier will be present whenever we pass you transaction data.
+ * @property {string} [externalCustomerId] - An identifier you would like to associate with the customer. This identifier will be present whenever we pass you customer data, allowing you to match our data with your own existing customer data.
+ * @property {string} [paymentMethod] - Pre-select the payment method you want the customer to use.
  */
 
+/** @typedef {MoonPayWidgetUiParams & MoonPayWidgetUiBuyParams } MoonPayBuyParams */
+
 /**
- * @typedef {MoonPayWidgetUiParams & {
- *   apiKey: string,
- *   defaultBaseCurrencyCode?: string,
- *   refundWalletAddress?: string,
- *   refundWalletAddresses?: string,
- *   lockAmount?: boolean,
- *   email?: string,
- *   externalTransactionId?: string,
- *   externalCustomerId?: string,
- *   paymentMethod?: string
- * }} MoonPaySellParams
+ * @typedef {Object} MoonPayWidgetUiSellParams
+ * @property {string} [defaultBaseCurrencyCode] - The code of the cryptocurrency you would prefer the customer to sell. If you pass a defaultBaseCurrencyCode, the currency will be selected by default, but the customer will still be able to select another currency.
+ * @property {string} [refundWalletAddresses] - A JSON string representing the wallet addresses you want to use for various cryptocurrencies in case we have to issue a refund. An example with BTC and BCH wallet addresses: {"btc": "tb1qst9rvjnhym6kwmdkwgfs4h5dtp7cau5346jp9x", "bch": "bchtest:qraax8trdwct02968swqf4mpq3y5msqp8y7tmalm77"}
+ * @property {boolean} [lockAmount] - Set this parameter to true to lock the baseCurrencyAmount set for the customer and prevent them from modifying it. This parameter will be skipped if baseCurrencyAmount is not passed.
+ * @property {string} [email] - The customer's email address. If you pass a valid email address, the customer won't be prompted to enter one.
+ * @property {string} [externalTransactionId] - An identifier you would like to associate with the transaction. This identifier will be present whenever we pass you transaction data.
+ * @property {string} [externalCustomerId] - An identifier you would like to associate with the customer. This identifier will be present whenever we pass you customer data, allowing you to match our data with your own existing customer data.
+ * @property {string} [paymentMethod] - Pre-select the payout method you want the customer to use.
  */
+
+/** @typedef {MoonPayWidgetUiParams & MoonPayWidgetUiSellParams } MoonPaySellParams */
 
 /**
  * @typedef {Object} MoonPayQuoteBuyParams
