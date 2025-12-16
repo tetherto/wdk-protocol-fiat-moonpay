@@ -421,10 +421,12 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
         .toFixed(cryptoInfo.precision, 1)
-    } else {
+    } else if ('fiatAmount' in options) {
       params.baseCurrencyAmount = new BigNumber(options.fiatAmount)
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
+    } else {
+      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
     }
 
     if (recipient) {
@@ -465,10 +467,12 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
         .toFixed(cryptoInfo.precision, 1)
-    } else {
+    } else if ('fiatAmount' in options) {
       params.baseCurrencyAmount = new BigNumber(options.fiatAmount)
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
+    } else {
+      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
     }
 
     const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_API_DOMAIN)
@@ -511,6 +515,10 @@ export default class MoonPayProtocol extends FiatProtocol {
    */
   async quoteSell (options) {
     const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
+
+    if (cryptoAmount === undefined) {
+      throw new Error(`'cryptoAmount' must be provided`)
+    }
 
     const params = {
       ...config,
@@ -581,10 +589,12 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.baseCurrencyAmount = new BigNumber(options.cryptoAmount)
         .shiftedBy(-1 * cryptoInfo.decimals)
         .toFixed(cryptoInfo.precision, 1)
-    } else {
+    } else if ('fiatAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.fiatAmount)
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
+    } else {
+      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
     }
 
     if (refundAddress) {
