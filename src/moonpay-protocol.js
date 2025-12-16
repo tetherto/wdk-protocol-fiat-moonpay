@@ -55,15 +55,11 @@ import BigNumber from 'bignumber.js'
 /**
  * @typedef {MoonPayWidgetUiParams & {
  *   apiKey: string,
- *   currencyCode?: string,
  *   defaultCurrencyCode?: string,
  *   walletAddress?: string,
  *   walletAddressTag?: string,
  *   walletAddresses?: string,
  *   walletAddressTags?: string,
- *   baseCurrencyCode?: string,
- *   baseCurrencyAmount?: number,
- *   quoteCurrencyAmount?: number,
  *   contractAddress?: string,
  *   networkCode?: string,
  *   lockAmount?: boolean,
@@ -77,13 +73,9 @@ import BigNumber from 'bignumber.js'
 /**
  * @typedef {MoonPayWidgetUiParams & {
  *   apiKey: string,
- *   baseCurrencyCode?: string,
  *   defaultBaseCurrencyCode?: string,
  *   refundWalletAddress?: string,
  *   refundWalletAddresses?: string,
- *   quoteCurrencyCode?: string,
- *   baseCurrencyAmount?: number,
- *   quoteCurrencyAmount?: number,
  *   lockAmount?: boolean,
  *   email?: string,
  *   externalTransactionId?: string,
@@ -314,7 +306,7 @@ import BigNumber from 'bignumber.js'
 
 /** @typedef {SupportedFiatCurrency & { metadata: MoonPayFiatCurrencyDetails }} MoonPaySupportedFiatCurrency */
 
-/** @typedef {BuyOptions & { config?: Omit<MoonPayBuyParams, 'currencyCode' | 'baseCurrencyCode' | 'baseCurrencyAmount'> }} MoonPayBuyOptions */
+/** @typedef {BuyOptions & { config?: MoonPayBuyParams }} MoonPayBuyOptions */
 
 /** @typedef {Omit<BuyOptions, 'recipient'> & { config?: MoonPayQuoteBuyParams }} MoonPayQuoteBuyOptions */
 
@@ -324,7 +316,14 @@ import BigNumber from 'bignumber.js'
 
 /** @typedef {FiatQuote & { metadata: MoonPaySellQuoteMetadata }} MoonPaySellQuote */
 
-/** @typedef {SellOptions & { config?: Omit<MoonPaySellParams, 'baseCurrencyCode' | 'quoteCurrencyCode' | 'baseCurrencyAmount'> }} MoonPaySellOptions */
+/** @typedef {SellOptions & { config?: MoonPaySellParams }} MoonPaySellOptions */
+
+/**
+ * @typedef {Object} MoonPayProtocolConfig
+ * @property {string} secretKey - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
+ * @property {string} apiKey - Your publishable API key.
+ * @property {number} [cacheTime] - The duration in milliseconds to cache supported currencies.
+ */
 
 /**
  * Converts a MoonPay transaction status to a standardized WdkRampTransactionStatus.
@@ -364,11 +363,19 @@ const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 
 export default class MoonPayProtocol extends FiatProtocol {
   /**
-   * @param {object} config - Configuration for the MoonPay handler.
-   * @param {string} config.secretKey - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
-   * @param {string} config.apiKey - Your publishable API key.
-   * @param {number} [config.cacheTime] - The duration in milliseconds to cache supported currencies.
-   * @param {IWalletAccount | IWalletAccountReadOnly} [account]
+   * Creates a new read-only interface to interact with the MoonPay protocol.
+   * 
+   * @overload
+   * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+   * @param {IWalletAccountReadOnly} [account] - The read-only wallet account to use to interact with the protocol.
+   */
+
+  /**
+   * Creates a new interface to interact with the MoonPay protocol.
+   * 
+   * @overload
+   * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+   * @param {IWalletAccount} [account] - The wallet account to use to interact with the protocol.
    */
   constructor ({ secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }, account) {
     super(account)
