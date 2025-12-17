@@ -159,11 +159,11 @@ Retrieves a list of supported countries.
 
 ## 📝 Notes
 
-Works with networks and currencies supported by MoonPay.
-Check MoonPay documentation for the full list of widget parameters, supported cryptocurrencies and regions.
-The package provides the baseline for MoonPay integration. To fully utilize the power of MoonPay widget, take a look at [MoonPay documentation](https://dev.moonpay.com/docs/ramps-sdk-buy-params) for the full list of parameters.
-The `secretKey` can be retrieved through [MoonPay dashboard](https://dashboard.moonpay.com/).
-It is highly recommended to test the entire buy/sell flow in sandbox environment. Read more [here](https://dev.moonpay.com/docs/faq-sandbox-testing).
+- Works with networks and currencies supported by MoonPay.
+- Check MoonPay documentation for the full list of widget parameters, supported cryptocurrencies and regions.
+- The package provides the baseline for MoonPay integration. To fully utilize the power of MoonPay widget, take a look at [MoonPay documentation](https://dev.moonpay.com/docs/ramps-sdk-buy-params) for the full list of parameters.
+- The `secretKey` can be retrieved through [MoonPay dashboard](https://dashboard.moonpay.com/).
+- It is highly recommended to test the entire buy/sell flow in sandbox environment. Read more [here](https://dev.moonpay.com/docs/faq-sandbox-testing).
 
 ## 🔒 Security Considerations
 
