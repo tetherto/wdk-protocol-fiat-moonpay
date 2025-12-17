@@ -1,27 +1,37 @@
 export default class MoonPayProtocol extends FiatProtocol {
     /**
+     * Creates a new interface to interact with the MoonPay protocol without binding it to a wallet account.
+     *
+     * @overload
+     * @param {undefined} account - The wallet account to use to interact with the protocol.
+     * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+     */
+    constructor(account: undefined, config: MoonPayProtocolConfig);
+    /**
      * Creates a new read-only interface to interact with the MoonPay protocol.
      *
      * @overload
+     * @param {IWalletAccountReadOnly} account - The wallet account to use to interact with the protocol.
      * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
-     * @param {IWalletAccountReadOnly} [account] - The read-only wallet account to use to interact with the protocol.
      */
-    constructor(config: MoonPayProtocolConfig, account?: IWalletAccountReadOnly);
+    constructor(account: IWalletAccountReadOnly, config: MoonPayProtocolConfig);
     /**
      * Creates a new interface to interact with the MoonPay protocol.
      *
      * @overload
+     * @param {IWalletAccount} account - The wallet account to use to interact with the protocol.
      * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
-     * @param {IWalletAccount} [account] - The wallet account to use to interact with the protocol.
      */
-    constructor(config: MoonPayProtocolConfig, account?: IWalletAccount);
-    _moonPay: MoonPay;
-    _apiKey: string;
-    _supportedCurrenciesCache: {
-        timestamp: number;
-        data: any;
-    };
-    _cacheThreshold: number;
+    constructor(account: IWalletAccount, config: MoonPayProtocolConfig);
+    /** @private */
+    private _moonPay;
+    /** @private */
+    private _apiKey;
+    /** @private */
+    private _supportedCurrenciesCache;
+    /** @private */
+    private _cacheThreshold;
+    /** @private */
     private _getAssetDetails(cryptoAsset: string, fiatCurrency: string): Promise<{
         cryptoInfo: MoonPayCryptoCurrencyDetails;
         fiatInfo: MoonPayFiatCurrencyDetails;
@@ -29,28 +39,28 @@ export default class MoonPayProtocol extends FiatProtocol {
     /**
      * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
      * @override
-     * @param {MoonPayBuyOptions} options
+     * @param {MoonPayBuyOptions} options - The options for the purchase.
      * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
      */
     override buy(options: MoonPayBuyOptions): Promise<BuyResult>;
     /**
      * Gets a quote for a crypto asset purchase.
      * @override
-     * @param {MoonPayQuoteBuyOptions} options
+     * @param {MoonPayQuoteBuyOptions} options - The options for the quote.
      * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
      */
     override quoteBuy(options: MoonPayQuoteBuyOptions): Promise<MoonPayBuyQuote>;
     /**
      * Gets a quote for a crypto asset sale.
      * @override
-     * @param {MoonPayQuoteSellOptions} options
+     * @param {MoonPayQuoteSellOptions} options - The options for the quote.
      * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
      */
     override quoteSell(options: MoonPayQuoteSellOptions): Promise<MoonPaySellQuote>;
     /**
      * Generates a widget URL for a user to sell a crypto asset for fiat currency.
      * @override
-     * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
+     * @param {MoonPaySellOptions} options - The options for the sale.
      * @returns {Promise<SellResult>} The URL for the user to complete the sale.
      */
     override sell(options: MoonPaySellOptions): Promise<SellResult>;
@@ -916,4 +926,3 @@ export type MoonPayProtocolConfig = {
     cacheTime?: number;
 };
 import { FiatProtocol } from '@tetherto/wdk-wallet/protocols';
-import { MoonPay } from '@moonpay/moonpay-node';
