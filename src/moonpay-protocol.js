@@ -362,25 +362,41 @@ const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 
 export default class MoonPayProtocol extends FiatProtocol {
   /**
+   * Creates a new interface to interact with the MoonPay protocol without binding it to a wallet account.
+   * 
+   * @overload
+   * @param {undefined} account - The wallet account to use to interact with the protocol.
+   * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
+   */
+
+  /**
    * Creates a new read-only interface to interact with the MoonPay protocol.
    * 
    * @overload
+   * @param {IWalletAccountReadOnly} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
-   * @param {IWalletAccountReadOnly} [account] - The read-only wallet account to use to interact with the protocol.
    */
 
   /**
    * Creates a new interface to interact with the MoonPay protocol.
    * 
    * @overload
+   * @param {IWalletAccount} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
-   * @param {IWalletAccount} [account] - The wallet account to use to interact with the protocol.
    */
-  constructor ({ secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }, account) {
+  constructor (account, { secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }) {
     super(account)
+
+    /** @private */
     this._moonPay = new MoonPay(secretKey)
+
+    /** @private */
     this._apiKey = apiKey
+
+    /** @private */
     this._supportedCurrenciesCache = undefined
+
+    /** @private */
     this._cacheThreshold = cacheTime
   }
 
@@ -400,7 +416,7 @@ export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Generates a widget URL for a user to purchase a crypto asset with fiat currency.
    * @override
-   * @param {MoonPayBuyOptions} options
+   * @param {MoonPayBuyOptions} options - The options for the purchase.
    * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
    */
   async buy (options) {
@@ -416,6 +432,10 @@ export default class MoonPayProtocol extends FiatProtocol {
     const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
+
+    if ('cryptoAmount' in options && 'fiatAmount' in options) {
+      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+    }
 
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
@@ -448,7 +468,7 @@ export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Gets a quote for a crypto asset purchase.
    * @override
-   * @param {MoonPayQuoteBuyOptions} options
+   * @param {MoonPayQuoteBuyOptions} options - The options for the quote.
    * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
    */
   async quoteBuy (options) {
@@ -462,6 +482,10 @@ export default class MoonPayProtocol extends FiatProtocol {
     const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
+
+    if ('cryptoAmount' in options && 'fiatAmount' in options) {
+      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+    }
 
     if ('cryptoAmount' in options) {
       params.quoteCurrencyAmount = new BigNumber(options.cryptoAmount)
@@ -510,7 +534,7 @@ export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Gets a quote for a crypto asset sale.
    * @override
-   * @param {MoonPayQuoteSellOptions} options
+   * @param {MoonPayQuoteSellOptions} options - The options for the quote.
    * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
    */
   async quoteSell (options) {
@@ -568,7 +592,7 @@ export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Generates a widget URL for a user to sell a crypto asset for fiat currency.
    * @override
-   * @param {MoonPaySellOptions} options The provider-specific code of the crypto asset to sell.
+   * @param {MoonPaySellOptions} options - The options for the sale.
    * @returns {Promise<SellResult>} The URL for the user to complete the sale.
    */
   async sell (options) {
@@ -584,6 +608,10 @@ export default class MoonPayProtocol extends FiatProtocol {
     const { cryptoInfo, fiatInfo } = await this._getAssetDetails(cryptoAsset, fiatCurrency)
 
     const fiatDecimals = getFiatDecimals(fiatInfo)
+
+    if ('cryptoAmount' in options && 'fiatAmount' in options) {
+      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+    }
 
     if ('cryptoAmount' in options) {
       params.baseCurrencyAmount = new BigNumber(options.cryptoAmount)

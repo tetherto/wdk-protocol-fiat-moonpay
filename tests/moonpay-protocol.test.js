@@ -34,7 +34,7 @@ describe('MoonPayProtocol', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    moonpay = new MoonpayProtocol(config)
+    moonpay = new MoonpayProtocol(undefined, config)
   })
 
   describe('buy', () => {
@@ -45,7 +45,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const buyUrl = await moonpay.buy({
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_000_000_000_000_000_000n
@@ -71,7 +71,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const buyUrl = await moonpay.buy({
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         fiatAmount: 1000_00n // 1000 USD
@@ -97,7 +97,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const buyUrl = await moonpay.buy({
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'eur',
         fiatAmount: 1000_00n
@@ -123,8 +123,8 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      moonpay = new MoonpayProtocol(config, mockAccount)
-      const buyUrl = await moonpay.buy({
+      moonpay = new MoonpayProtocol(mockAccount, config)
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         fiatAmount: 1000_00n
@@ -153,8 +153,8 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      moonpay = new MoonpayProtocol(config, mockAccount)
-      const buyUrl = await moonpay.buy({
+      moonpay = new MoonpayProtocol(mockAccount, config)
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         fiatAmount: 1000_00n,
@@ -183,7 +183,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const buyUrl = await moonpay.buy({
+      const { buyUrl } = await moonpay.buy({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_234_567_000_000_000_000n
@@ -243,6 +243,34 @@ describe('MoonPayProtocol', () => {
       })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
+
+    test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.buy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1n,
+        fiatAmount: 100n
+      })).rejects.toThrow("'cryptoAmount' and 'fiatAmount' cannot both be provided")
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error if neither cryptoAmount nor fiatAmount is provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.buy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd'
+      })).rejects.toThrow("Either 'cryptoAmount' or 'fiatAmount' must be provided")
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
   })
 
   describe('sell', () => {
@@ -254,7 +282,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const sellUrl = await moonpay.sell({
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_000_000_000_000_000_000n,
@@ -282,7 +310,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const sellUrl = await moonpay.sell({
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         fiatAmount: 1000_00n // 1000 USD
@@ -308,7 +336,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const sellUrl = await moonpay.sell({
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'eur',
         fiatAmount: 1000_00n // 1000 USD
@@ -334,8 +362,8 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      moonpay = new MoonpayProtocol(config, mockAccount)
-      const sellUrl = await moonpay.sell({
+      moonpay = new MoonpayProtocol(mockAccount, config)
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_000_000_000_000_000_000n
@@ -364,8 +392,8 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      moonpay = new MoonpayProtocol(config, mockAccount)
-      const sellUrl = await moonpay.sell({
+      moonpay = new MoonpayProtocol(mockAccount, config)
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_000_000_000_000_000_000n,
@@ -394,7 +422,7 @@ describe('MoonPayProtocol', () => {
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
       })
 
-      const sellUrl = await moonpay.sell({
+      const { sellUrl } = await moonpay.sell({
         cryptoAsset: 'eth',
         fiatCurrency: 'usd',
         cryptoAmount: 1_234_567_000_000_000_000n
@@ -452,6 +480,34 @@ describe('MoonPayProtocol', () => {
         fiatCurrency: 'bad_fiat',
         cryptoAmount: 1_000_000_000_000_000_000n
       })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.sell({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1n,
+        fiatAmount: 100n
+      })).rejects.toThrow("'cryptoAmount' and 'fiatAmount' cannot both be provided")
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error if neither cryptoAmount nor fiatAmount is provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.sell({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd'
+      })).rejects.toThrow("Either 'cryptoAmount' or 'fiatAmount' must be provided")
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
   })
@@ -598,6 +654,34 @@ describe('MoonPayProtocol', () => {
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
       expect(global.fetch).toHaveBeenCalledTimes(1)
     })
+
+    test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.quoteBuy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1n,
+        fiatAmount: 100n
+      })).rejects.toThrow("'cryptoAmount' and 'fiatAmount' cannot both be provided")
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error if neither cryptoAmount nor fiatAmount is provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      await expect(moonpay.quoteBuy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd'
+      })).rejects.toThrow("Either 'cryptoAmount' or 'fiatAmount' must be provided")
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
   })
 
   describe('quoteSell', () => {
@@ -634,6 +718,13 @@ describe('MoonPayProtocol', () => {
       expect(sellQuote.fee).toBe(5000n) // (45 + 5) * 100
       expect(sellQuote.rate).toBe('3000')
       expect(sellQuote.metadata).toEqual(mockQuote)
+    })
+
+    test('should throw error if cryptoAmount is not provided', async () => {
+      await expect(moonpay.quoteSell({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd'
+      })).rejects.toThrow("'cryptoAmount' must be provided")
     })
 
     test('should throw error when cryptoAsset is invalid', async () => {
