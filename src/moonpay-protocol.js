@@ -363,7 +363,7 @@ const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Creates a new interface to interact with the MoonPay protocol without binding it to a wallet account.
-   * 
+   *
    * @overload
    * @param {undefined} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
@@ -371,7 +371,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
   /**
    * Creates a new read-only interface to interact with the MoonPay protocol.
-   * 
+   *
    * @overload
    * @param {IWalletAccountReadOnly} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
@@ -379,7 +379,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
   /**
    * Creates a new interface to interact with the MoonPay protocol.
-   * 
+   *
    * @overload
    * @param {IWalletAccount} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
@@ -434,7 +434,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options && 'fiatAmount' in options) {
-      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+      throw new Error('\'cryptoAmount\' and \'fiatAmount\' cannot both be provided')
     }
 
     if ('cryptoAmount' in options) {
@@ -446,7 +446,7 @@ export default class MoonPayProtocol extends FiatProtocol {
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     } else {
-      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
+      throw new Error('Either \'cryptoAmount\' or \'fiatAmount\' must be provided')
     }
 
     if (recipient) {
@@ -484,7 +484,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options && 'fiatAmount' in options) {
-      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+      throw new Error('\'cryptoAmount\' and \'fiatAmount\' cannot both be provided')
     }
 
     if ('cryptoAmount' in options) {
@@ -496,7 +496,7 @@ export default class MoonPayProtocol extends FiatProtocol {
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     } else {
-      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
+      throw new Error('Either \'cryptoAmount\' or \'fiatAmount\' must be provided')
     }
 
     const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_API_DOMAIN)
@@ -541,7 +541,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
 
     if (cryptoAmount === undefined) {
-      throw new Error(`'cryptoAmount' must be provided`)
+      throw new Error('\'cryptoAmount\' must be provided')
     }
 
     const params = {
@@ -610,7 +610,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const fiatDecimals = getFiatDecimals(fiatInfo)
 
     if ('cryptoAmount' in options && 'fiatAmount' in options) {
-      throw new Error(`'cryptoAmount' and 'fiatAmount' cannot both be provided`)
+      throw new Error('\'cryptoAmount\' and \'fiatAmount\' cannot both be provided')
     }
 
     if ('cryptoAmount' in options) {
@@ -622,7 +622,7 @@ export default class MoonPayProtocol extends FiatProtocol {
         .shiftedBy(-1 * fiatDecimals)
         .toFixed(fiatInfo.precision, 1)
     } else {
-      throw new Error(`Either 'cryptoAmount' or 'fiatAmount' must be provided`)
+      throw new Error('Either \'cryptoAmount\' or \'fiatAmount\' must be provided')
     }
 
     if (refundAddress) {
