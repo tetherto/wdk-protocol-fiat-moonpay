@@ -14,7 +14,6 @@
 
 'use strict'
 
-import { loadMoonPay } from '@moonpay/moonpay-js'
 import { FiatProtocol } from '@tetherto/wdk-wallet/protocols'
 import BigNumber from 'bignumber.js'
 
@@ -322,6 +321,7 @@ import BigNumber from 'bignumber.js'
  * @property {string} apiKey - Your publishable API key.
  * @property {(urlForSigning: string) => Promise<string>} [signUrl] - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
  * @property {number} [cacheTime] - The duration in milliseconds to cache supported currencies.
+ * @property {"production" | "sandbox"} [environment] - The environment to use for MoonPay endpoints and widget URLs. Defaults to "production". Use "production" for live transactions and "sandbox" for testing with non-real funds.
  */
 
 /**
@@ -357,7 +357,17 @@ function getFiatDecimals (currencyDetail) {
   return decimals
 }
 
-const MOONPAY_API_DOMAIN = 'https://api.moonpay.com/'
+const MOONPAY_ORIGINS = {
+  api: 'https://api.moonpay.com/',
+  buy: {
+    production: 'https://buy.moonpay.com/',
+    sandbox: 'https://buy-sandbox.moonpay.com'
+  },
+  sell: {
+    production: 'https://sell.moonpay.com/',
+    sandbox: 'https://sell-sandbox.moonpay.com'
+  }
+}
 const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 
 export default class MoonPayProtocol extends FiatProtocol {
@@ -384,7 +394,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {IWalletAccount} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
    */
-  constructor (account, { apiKey, signUrl, cacheTime = MOONPAY_CACHE_TIME }) {
+  constructor (account, { apiKey, signUrl, environment = 'production', cacheTime = MOONPAY_CACHE_TIME }) {
     super(account)
 
     /** @private */
@@ -392,6 +402,9 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     /** @private */
     this._signUrl = signUrl
+
+    /** @private */
+    this._environment = environment
 
     /** @private */
     this._supportedCurrenciesCache = undefined
@@ -455,7 +468,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.walletAddress = await this._account.getAddress()
     }
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/buy`, MOONPAY_API_DOMAIN)
+    const url = new URL('/', MOONPAY_ORIGINS.buy[this._environment])
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -466,7 +479,12 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const urlForSigning = url.toString()
 
-    if (!this._signUrl) throw new Error("The _signUrl must be provided for the protocol to sign the buy url.")
+    if (!this._signUrl) {
+      return {
+        urlForSigning
+      }
+    }
+
     const buyUrl = await this._signUrl(urlForSigning)
 
     return {
@@ -508,7 +526,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Either \'cryptoAmount\' or \'fiatAmount\' must be provided')
     }
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_API_DOMAIN)
+    const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_ORIGINS.api)
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -566,7 +584,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       .shiftedBy(-1 * cryptoInfo.decimals)
       .toFixed(cryptoInfo.precision, 1)
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/sell_quote`, MOONPAY_API_DOMAIN)
+    const url = new URL(`v3/currencies/${cryptoAsset}/sell_quote`, MOONPAY_ORIGINS.api)
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -640,7 +658,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.refundWalletAddress = await this._account.getAddress()
     }
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/sell`, MOONPAY_API_DOMAIN)
+    const url = new URL('/', MOONPAY_ORIGINS.sell[this._environment])
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -651,7 +669,12 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const urlForSigning = url.toString()
 
-    if (!this._signUrl) throw new Error("The _signUrl must be provided for the protocol to sign the sell url.")
+    if (!this._signUrl) {
+      return {
+        urlForSigning
+      }
+    }
+
     const sellUrl = await this._signUrl(urlForSigning)
 
     return {
@@ -673,7 +696,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const path = direction === 'buy' ? `v1/transactions/${txId}` : `v3/sell_transactions/${txId}`
 
-    const url = new URL(path, MOONPAY_API_DOMAIN)
+    const url = new URL(path, MOONPAY_ORIGINS.api)
 
     url.searchParams.append('apiKey', this._apiKey)
 
@@ -708,7 +731,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const now = Date.now()
 
     if (!this._supportedCurrenciesCache || (now - this._supportedCurrenciesCache.timestamp >= this._cacheThreshold)) {
-      const url = new URL('v3/currencies', MOONPAY_API_DOMAIN)
+      const url = new URL('v3/currencies', MOONPAY_ORIGINS.api)
       url.searchParams.append('apiKey', this._apiKey)
 
       const resp = await fetch(url.toString(), {
@@ -775,7 +798,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @returns {Promise<MoonPaySupportedCountry[]>} An array of supported countries.
    */
   async getSupportedCountries () {
-    const url = new URL('v3/countries', MOONPAY_API_DOMAIN)
+    const url = new URL('v3/countries', MOONPAY_ORIGINS.api)
 
     url.searchParams.append('apiKey', this._apiKey)
 
