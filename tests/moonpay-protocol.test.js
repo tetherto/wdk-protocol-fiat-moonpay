@@ -1,18 +1,9 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals'
 
-const generateUrlMock = jest.fn()
+import MoonpayProtocol from '../src/moonpay-protocol.js'
 
-jest.unstable_mockModule('@moonpay/moonpay-node', () => ({
-  MoonPay: jest.fn().mockImplementation(() => ({
-    url: {
-      generate: generateUrlMock
-    }
-  }))
-}))
+const signUrl = jest.fn()
 
-const { default: MoonpayProtocol } = await import('../src/moonpay-protocol.js')
-
-const MOCK_SECRET_KEY = 'sk_test_123'
 const MOCK_API_KEY = 'pk_test_123'
 const MOCK_SIGNED_URL = 'MOCK_SIGNED_URL'
 const MOCK_ACCOUNT_ADDRESS = 'MOCK_ACCOUNT_ADDRESS'
@@ -28,7 +19,7 @@ const mockAccount = {
 }
 
 describe('MoonPayProtocol', () => {
-  const config = { secretKey: MOCK_SECRET_KEY, apiKey: MOCK_API_KEY }
+  const config = { signUrl, apiKey: MOCK_API_KEY }
 
   let moonpay
 
@@ -39,7 +30,7 @@ describe('MoonPayProtocol', () => {
 
   describe('buy', () => {
     test('should successfully generate a buy URl to buy an exact crypto amount', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -51,21 +42,20 @@ describe('MoonPayProtocol', () => {
         cryptoAmount: 1_000_000_000_000_000_000n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'usd',
-          quoteCurrencyAmount: '1.00000'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        quoteCurrencyAmount: '1.00000'
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a buy URL to buy with a specified fiat amount', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -77,21 +67,20 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n // 1000 USD
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'usd',
-          baseCurrencyAmount: '1000.00'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        baseCurrencyAmount: '1000.00'
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a buy URl with a fiat currency lacking decimals', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -103,21 +92,20 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'eur',
-          baseCurrencyAmount: '1000.00'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'eur',
+        baseCurrencyAmount: '1000.00'
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a buy URL when a wallet is passed', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -130,16 +118,15 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'usd',
-          baseCurrencyAmount: '1000.00',
-          walletAddress: MOCK_ACCOUNT_ADDRESS
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        baseCurrencyAmount: '1000.00',
+        walletAddress: MOCK_ACCOUNT_ADDRESS
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).toHaveBeenCalled()
@@ -147,7 +134,7 @@ describe('MoonPayProtocol', () => {
 
     test('should prioritize recipient over existing account address', async () => {
       const MOCK_RECIPIENT = 'MOCK_RECIPIENT'
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -161,23 +148,22 @@ describe('MoonPayProtocol', () => {
         recipient: MOCK_RECIPIENT
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'usd',
-          baseCurrencyAmount: '1000.00',
-          walletAddress: MOCK_RECIPIENT
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        baseCurrencyAmount: '1000.00',
+        walletAddress: MOCK_RECIPIENT
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).not.toHaveBeenCalled()
     })
 
     test('should round down crypto amount with respect to precision', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -189,15 +175,14 @@ describe('MoonPayProtocol', () => {
         cryptoAmount: 1_234_567_000_000_000_000n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'buy',
-        params: {
-          apiKey: MOCK_API_KEY,
-          currencyCode: 'eth',
-          baseCurrencyCode: 'usd',
-          quoteCurrencyAmount: '1.23456'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        quoteCurrencyAmount: '1.23456'
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
     })
@@ -276,7 +261,7 @@ describe('MoonPayProtocol', () => {
   describe('sell', () => {
     test('should successfully generate a sell URL to sell an exact crypto amount', async () => {
       const MOCK_REFUND_ADDRESS = 'MOCK_REFUND_ADDRESS'
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -289,22 +274,21 @@ describe('MoonPayProtocol', () => {
         refundAddress: MOCK_REFUND_ADDRESS
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'usd',
-          baseCurrencyAmount: '1.00000',
-          refundWalletAddress: MOCK_REFUND_ADDRESS
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        baseCurrencyAmount: '1.00000',
+        refundWalletAddress: MOCK_REFUND_ADDRESS
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a sell URL to sell for a specified fiat amount', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -316,21 +300,20 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n // 1000 USD
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'usd',
-          quoteCurrencyAmount: '1000.00'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        quoteCurrencyAmount: '1000.00'
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a sell URL with a fiat currency lacking decimals', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -342,21 +325,20 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n // 1000 USD
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'eur',
-          quoteCurrencyAmount: '1000.00'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'eur',
+        quoteCurrencyAmount: '1000.00'
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
     })
 
     test('should successfully generate a sell URL when a wallet is passed', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -369,16 +351,15 @@ describe('MoonPayProtocol', () => {
         cryptoAmount: 1_000_000_000_000_000_000n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'usd',
-          baseCurrencyAmount: '1.00000',
-          refundWalletAddress: MOCK_ACCOUNT_ADDRESS
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        baseCurrencyAmount: '1.00000',
+        refundWalletAddress: MOCK_ACCOUNT_ADDRESS
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).toHaveBeenCalled()
@@ -386,7 +367,7 @@ describe('MoonPayProtocol', () => {
 
     test('should prioritize refundAddress over existing account address', async () => {
       const MOCK_REFUND_ADDRESS = 'MOCK_REFUND_ADDRESS'
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -400,23 +381,22 @@ describe('MoonPayProtocol', () => {
         refundAddress: MOCK_REFUND_ADDRESS
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'usd',
-          baseCurrencyAmount: '1.00000',
-          refundWalletAddress: MOCK_REFUND_ADDRESS
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        baseCurrencyAmount: '1.00000',
+        refundWalletAddress: MOCK_REFUND_ADDRESS
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).not.toHaveBeenCalled()
     })
 
     test('should round down crypto amount with respect to precision', async () => {
-      generateUrlMock.mockReturnValue(MOCK_SIGNED_URL)
+      signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
@@ -428,15 +408,14 @@ describe('MoonPayProtocol', () => {
         cryptoAmount: 1_234_567_000_000_000_000n
       })
 
+      const [[params]] = signUrl.mock.calls
+
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(generateUrlMock).toHaveBeenCalledWith({
-        flow: 'sell',
-        params: {
-          apiKey: MOCK_API_KEY,
-          baseCurrencyCode: 'eth',
-          quoteCurrencyCode: 'usd',
-          baseCurrencyAmount: '1.23456'
-        }
+      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        baseCurrencyAmount: '1.23456'
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
     })

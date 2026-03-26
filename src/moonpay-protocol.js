@@ -14,7 +14,7 @@
 
 'use strict'
 
-import { MoonPay } from '@moonpay/moonpay-node'
+import { loadMoonPay } from '@moonpay/moonpay-js'
 import { FiatProtocol } from '@tetherto/wdk-wallet/protocols'
 import BigNumber from 'bignumber.js'
 
@@ -319,8 +319,8 @@ import BigNumber from 'bignumber.js'
 
 /**
  * @typedef {Object} MoonPayProtocolConfig
- * @property {string} secretKey - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
  * @property {string} apiKey - Your publishable API key.
+ * @property {(urlForSigning: string) => Promise<string>} [signUrl] - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
  * @property {number} [cacheTime] - The duration in milliseconds to cache supported currencies.
  */
 
@@ -384,14 +384,14 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @param {IWalletAccount} account - The wallet account to use to interact with the protocol.
    * @param {MoonPayProtocolConfig} config - The MoonPay protocol configuration.
    */
-  constructor (account, { secretKey, apiKey, cacheTime = MOONPAY_CACHE_TIME }) {
+  constructor (account, { apiKey, signUrl, cacheTime = MOONPAY_CACHE_TIME }) {
     super(account)
 
     /** @private */
-    this._moonPay = new MoonPay(secretKey)
+    this._apiKey = apiKey
 
     /** @private */
-    this._apiKey = apiKey
+    this._signUrl = signUrl
 
     /** @private */
     this._supportedCurrenciesCache = undefined
@@ -455,10 +455,19 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.walletAddress = await this._account.getAddress()
     }
 
-    const buyUrl = this._moonPay.url.generate({
-      flow: 'buy',
-      params
+    const url = new URL(`v3/currencies/${cryptoAsset}/buy`, MOONPAY_API_DOMAIN)
+
+    url.searchParams.append('apiKey', this._apiKey)
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, value)
+      }
     })
+
+    const urlForSigning = url.toString()
+
+    if (!this._signUrl) throw new Error("The _signUrl must be provided for the protocol to sign the buy url.")
+    const buyUrl = await this._signUrl(urlForSigning)
 
     return {
       buyUrl
@@ -631,10 +640,19 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.refundWalletAddress = await this._account.getAddress()
     }
 
-    const sellUrl = this._moonPay.url.generate({
-      flow: 'sell',
-      params
+    const url = new URL(`v3/currencies/${cryptoAsset}/sell`, MOONPAY_API_DOMAIN)
+
+    url.searchParams.append('apiKey', this._apiKey)
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, value)
+      }
     })
+
+    const urlForSigning = url.toString()
+
+    if (!this._signUrl) throw new Error("The _signUrl must be provided for the protocol to sign the sell url.")
+    const sellUrl = await this._signUrl(urlForSigning)
 
     return {
       sellUrl
