@@ -319,7 +319,7 @@ import BigNumber from 'bignumber.js'
 /**
  * @typedef {Object} MoonPayProtocolConfig
  * @property {string} apiKey - Your publishable API key.
- * @property {(urlForSigning: string) => Promise<string>} [signUrl] - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
+ * @property {(urlForSignature: string) => Promise<string>} [signUrl] - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
  * @property {number} [cacheTime] - The duration in milliseconds to cache supported currencies.
  * @property {"production" | "sandbox"} [environment] - The environment to use for MoonPay endpoints and widget URLs. Defaults to "production". Use "production" for live transactions and "sandbox" for testing with non-real funds.
  */
@@ -470,7 +470,6 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const url = new URL('/', MOONPAY_ORIGINS.buy[this._environment])
 
-    url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         url.searchParams.append(key, value)
@@ -481,7 +480,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     if (!this._signUrl) {
       return {
-        urlForSignature
+        buyUrl: urlForSignature
       }
     }
 
@@ -660,7 +659,6 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const url = new URL('/', MOONPAY_ORIGINS.sell[this._environment])
 
-    url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         url.searchParams.append(key, value)
@@ -671,7 +669,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     if (!this._signUrl) {
       return {
-        urlForSignature
+        buyUrl: urlForSignature
       }
     }
 

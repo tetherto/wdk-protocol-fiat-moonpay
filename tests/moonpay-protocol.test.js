@@ -19,7 +19,7 @@ const mockAccount = {
 }
 
 describe('MoonPayProtocol', () => {
-  const config = { signUrl, apiKey: MOCK_API_KEY }
+  const config = { signUrl, apiKey: MOCK_API_KEY, environment: 'sandbox' }
 
   let moonpay
 
@@ -45,7 +45,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'usd',
@@ -70,7 +70,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'usd',
@@ -95,7 +95,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, {"headers": {"accept": "application/json"}})
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'eur',
@@ -121,7 +121,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'usd',
@@ -151,7 +151,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'usd',
@@ -178,7 +178,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         currencyCode: 'eth',
         baseCurrencyCode: 'usd',
@@ -277,7 +277,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'usd',
@@ -303,7 +303,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'usd',
@@ -328,7 +328,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'eur',
@@ -354,7 +354,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'usd',
@@ -384,7 +384,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'usd',
@@ -411,7 +411,7 @@ describe('MoonPayProtocol', () => {
       const [[params]] = signUrl.mock.calls
 
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
-      expect(Object.fromEntries(new URLSearchParams(params))).toMatchObject({
+      expect(Object.fromEntries(new URL(params).searchParams)).toMatchObject({
         apiKey: MOCK_API_KEY,
         baseCurrencyCode: 'eth',
         quoteCurrencyCode: 'usd',

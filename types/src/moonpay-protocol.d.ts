@@ -24,9 +24,11 @@ export default class MoonPayProtocol extends FiatProtocol {
      */
     constructor(account: IWalletAccount, config: MoonPayProtocolConfig);
     /** @private */
-    private _moonPay;
-    /** @private */
     private _apiKey;
+    /** @private */
+    private _signUrl;
+    /** @private */
+    private _environment;
     /** @private */
     private _supportedCurrenciesCache;
     /** @private */
@@ -913,16 +915,20 @@ export type MoonPaySellOptions = SellOptions & {
 };
 export type MoonPayProtocolConfig = {
     /**
-     * - Your secret key. MoonPay determines the environment (sandbox or production) based on this key.
-     */
-    secretKey: string;
-    /**
      * - Your publishable API key.
      */
     apiKey: string;
     /**
+     * - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
+     */
+    signUrl?: (urlForSignature: string) => Promise<string>;
+    /**
      * - The duration in milliseconds to cache supported currencies.
      */
     cacheTime?: number;
+    /**
+     * - The environment to use for MoonPay endpoints and widget URLs. Defaults to "production". Use "production" for live transactions and "sandbox" for testing with non-real funds.
+     */
+    environment?: "production" | "sandbox";
 };
 import { FiatProtocol } from '@tetherto/wdk-wallet/protocols';
