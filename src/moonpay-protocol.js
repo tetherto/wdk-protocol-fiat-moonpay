@@ -477,15 +477,15 @@ export default class MoonPayProtocol extends FiatProtocol {
       }
     })
 
-    const urlForSigning = url.toString()
+    const urlForSignature = url.toString()
 
     if (!this._signUrl) {
       return {
-        urlForSigning
+        urlForSignature
       }
     }
 
-    const buyUrl = await this._signUrl(urlForSigning)
+    const buyUrl = await this._signUrl(urlForSignature)
 
     return {
       buyUrl
@@ -667,15 +667,15 @@ export default class MoonPayProtocol extends FiatProtocol {
       }
     })
 
-    const urlForSigning = url.toString()
+    const urlForSignature = url.toString()
 
     if (!this._signUrl) {
       return {
-        urlForSigning
+        urlForSignature
       }
     }
 
-    const sellUrl = await this._signUrl(urlForSigning)
+    const sellUrl = await this._signUrl(urlForSignature)
 
     return {
       sellUrl
