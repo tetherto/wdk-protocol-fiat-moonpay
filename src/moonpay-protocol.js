@@ -318,8 +318,8 @@ import BigNumber from 'bignumber.js'
 
 /**
  * @typedef {Object} MoonPayProtocolConfig
- * @property {string} apiKey - Your publishable API key.
- * @property {(urlForSignature: string) => Promise<string>} [signUrl] - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
+ * @property {string} apiKey - Your publishable Moonpay API key.
+ * @property {(urlForSignature: string) => Promise<string>} [signUrl] - Callback used to sign buy/sell URLs via a trusted provider (e.g., a backend service). If not provided, the protocol returns unsigned URLs.
  * @property {number} [cacheTime] - The duration in milliseconds to cache supported currencies.
  * @property {"production" | "sandbox"} [environment] - The environment to use for MoonPay endpoints and widget URLs. Defaults to "production". Use "production" for live transactions and "sandbox" for testing with non-real funds.
  */
@@ -358,12 +358,12 @@ function getFiatDecimals (currencyDetail) {
 }
 
 const MOONPAY_ORIGINS = {
-  api: 'https://api.moonpay.com/',
-  buy: {
+  API: 'https://api.moonpay.com/',
+  BUY: {
     production: 'https://buy.moonpay.com/',
     sandbox: 'https://buy-sandbox.moonpay.com'
   },
-  sell: {
+  SELL: {
     production: 'https://sell.moonpay.com/',
     sandbox: 'https://sell-sandbox.moonpay.com'
   }
@@ -468,7 +468,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.walletAddress = await this._account.getAddress()
     }
 
-    const url = new URL('/', MOONPAY_ORIGINS.buy[this._environment])
+    const url = new URL('/', MOONPAY_ORIGINS.BUY[this._environment])
 
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -525,7 +525,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       throw new Error('Either \'cryptoAmount\' or \'fiatAmount\' must be provided')
     }
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_ORIGINS.api)
+    const url = new URL(`v3/currencies/${cryptoAsset}/buy_quote`, MOONPAY_ORIGINS.API)
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -583,7 +583,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       .shiftedBy(-1 * cryptoInfo.decimals)
       .toFixed(cryptoInfo.precision, 1)
 
-    const url = new URL(`v3/currencies/${cryptoAsset}/sell_quote`, MOONPAY_ORIGINS.api)
+    const url = new URL(`v3/currencies/${cryptoAsset}/sell_quote`, MOONPAY_ORIGINS.API)
 
     url.searchParams.append('apiKey', this._apiKey)
     Object.entries(params).forEach(([key, value]) => {
@@ -657,7 +657,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       params.refundWalletAddress = await this._account.getAddress()
     }
 
-    const url = new URL('/', MOONPAY_ORIGINS.sell[this._environment])
+    const url = new URL('/', MOONPAY_ORIGINS.SELL[this._environment])
 
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -694,7 +694,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     const path = direction === 'buy' ? `v1/transactions/${txId}` : `v3/sell_transactions/${txId}`
 
-    const url = new URL(path, MOONPAY_ORIGINS.api)
+    const url = new URL(path, MOONPAY_ORIGINS.API)
 
     url.searchParams.append('apiKey', this._apiKey)
 
@@ -729,7 +729,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     const now = Date.now()
 
     if (!this._supportedCurrenciesCache || (now - this._supportedCurrenciesCache.timestamp >= this._cacheThreshold)) {
-      const url = new URL('v3/currencies', MOONPAY_ORIGINS.api)
+      const url = new URL('v3/currencies', MOONPAY_ORIGINS.API)
       url.searchParams.append('apiKey', this._apiKey)
 
       const resp = await fetch(url.toString(), {
@@ -796,7 +796,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @returns {Promise<MoonPaySupportedCountry[]>} An array of supported countries.
    */
   async getSupportedCountries () {
-    const url = new URL('v3/countries', MOONPAY_ORIGINS.api)
+    const url = new URL('v3/countries', MOONPAY_ORIGINS.API)
 
     url.searchParams.append('apiKey', this._apiKey)
 

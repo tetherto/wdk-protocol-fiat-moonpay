@@ -915,11 +915,11 @@ export type MoonPaySellOptions = SellOptions & {
 };
 export type MoonPayProtocolConfig = {
     /**
-     * - Your publishable API key.
+     * - Your publishable Moonpay API key.
      */
     apiKey: string;
     /**
-     * - The callback to sign a buy/sell URL via trusted providers (e.g. a backend service).
+     * - Callback used to sign buy/sell URLs via a trusted provider (e.g., a backend service). If not provided, the protocol returns unsigned URLs.
      */
     signUrl?: (urlForSignature: string) => Promise<string>;
     /**
