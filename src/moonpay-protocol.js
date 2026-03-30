@@ -669,7 +669,7 @@ export default class MoonPayProtocol extends FiatProtocol {
 
     if (!this._signUrl) {
       return {
-        buyUrl: urlForSignature
+        sellUrl: urlForSignature
       }
     }
 

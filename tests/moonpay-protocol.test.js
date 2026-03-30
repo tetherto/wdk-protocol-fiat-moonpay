@@ -29,7 +29,7 @@ describe('MoonPayProtocol', () => {
   })
 
   describe('buy', () => {
-    test('should successfully generate a buy URl to buy an exact crypto amount', async () => {
+    test('should successfully generate a buy URL to buy an exact crypto amount', async () => {
       signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
@@ -79,7 +79,7 @@ describe('MoonPayProtocol', () => {
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
     })
 
-    test('should successfully generate a buy URl with a fiat currency lacking decimals', async () => {
+    test('should successfully generate a buy URL with a fiat currency lacking decimals', async () => {
       signUrl.mockReturnValue(MOCK_SIGNED_URL)
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
@@ -130,6 +130,29 @@ describe('MoonPayProtocol', () => {
       })
       expect(buyUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).toHaveBeenCalled()
+    })
+
+    test('should successfully generate an unsigned URL when the signUrl is not provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      moonpay = new MoonpayProtocol(mockAccount, { ...config, signUrl: undefined })
+      const { buyUrl } = await moonpay.buy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        fiatAmount: 1000_00n
+      })
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(Object.fromEntries(new URL(buyUrl).searchParams)).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        currencyCode: 'eth',
+        baseCurrencyCode: 'usd',
+        baseCurrencyAmount: '1000.00',
+        walletAddress: MOCK_ACCOUNT_ADDRESS
+      })
     })
 
     test('should prioritize recipient over existing account address', async () => {
@@ -363,6 +386,29 @@ describe('MoonPayProtocol', () => {
       })
       expect(sellUrl).toBe(MOCK_SIGNED_URL)
       expect(mockAccount.getAddress).toHaveBeenCalled()
+    })
+
+    test('should successfully generate a unsigned URL when the signUrl is not provided', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+      })
+
+      moonpay = new MoonpayProtocol(mockAccount, { ...config, signUrl: undefined })
+      const { sellUrl } = await moonpay.sell({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(Object.fromEntries(new URL(sellUrl).searchParams)).toMatchObject({
+        apiKey: MOCK_API_KEY,
+        baseCurrencyCode: 'eth',
+        quoteCurrencyCode: 'usd',
+        baseCurrencyAmount: '1.00000',
+        refundWalletAddress: MOCK_ACCOUNT_ADDRESS
+      })
     })
 
     test('should prioritize refundAddress over existing account address', async () => {
