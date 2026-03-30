@@ -2,7 +2,7 @@
 
 Note: This package is in beta. Please test in a dev setup first.
 
-A simple way to integrate MoonPay widget for on-ramp and off-ramp services. You can generate signed URLs for the MoonPay widget, get quotes for buying and selling crypto, and read protocol-related data. This package can be used in both frontend and backend environments.
+A simple way to integrate MoonPay widget for on-ramp and off-ramp services. You can generate signed or unsigned URLs for the MoonPay widget, get quotes for buying and selling crypto, and read protocol-related data. This package can be used in both frontend and backend environments.
 
 ## 🔍 About WDK
 
@@ -10,8 +10,8 @@ This is part of WDK (Wallet Development Kit). WDK helps you build safe, non‑cu
 
 ## 🌟 Features
 
-- Generate signed widget URL to buy Crypto (On-ramp)
-- Generate signed widget URL to sell Crypto (Off-ramp)
+- Generate signed or unsigned widget URL to buy Crypto (On-ramp)
+- Generate signed or unsigned widget URL to sell Crypto (Off-ramp)
 - Get quotes (buy and sell)
 - Get supported currencies, countries
 - Get buy/sell transaction details
