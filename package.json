@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@tetherto/wdk-wallet": "^1.0.0-beta.6",
-    "@moonpay/moonpay-node": "0.2.13",
     "bare-node-runtime": "^1.1.4",
     "bignumber.js": "^9.3.1"
   },

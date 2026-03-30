@@ -2,7 +2,7 @@
 
 Note: This package is in beta. Please test in a dev setup first.
 
-A simple way to integrate MoonPay widget for on-ramp and off-ramp services. You can generate signed URLs for the MoonPay widget, get quotes for buying and selling crypto, and read protocol-related data. This module is intended to be run on the backend.
+A simple way to integrate MoonPay widget for on-ramp and off-ramp services. You can generate signed or unsigned URLs for the MoonPay widget, get quotes for buying and selling crypto, and read protocol-related data. This package can be used in both frontend and backend environments.
 
 ## 🔍 About WDK
 
@@ -10,8 +10,8 @@ This is part of WDK (Wallet Development Kit). WDK helps you build safe, non‑cu
 
 ## 🌟 Features
 
-- Generate signed widget URL to buy Crypto (On-ramp)
-- Generate signed widget URL to sell Crypto (Off-ramp)
+- Generate signed or unsigned widget URL to buy Crypto (On-ramp)
+- Generate signed or unsigned widget URL to sell Crypto (Off-ramp)
 - Get quotes (buy and sell)
 - Get supported currencies, countries
 - Get buy/sell transaction details
@@ -29,10 +29,29 @@ npm install @tetherto/wdk-protocol-fiat-moonpay
 ```javascript
 import MoonPayProtocol from '@tetherto/wdk-protocol-fiat-moonpay'
 
+const signUrl = async (urlForSignature) => {
+  const response = await fetch('https://your-backend.example.com/moonpay/sign-url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ urlForSignature })
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to sign MoonPay URL: ${response.status} ${response.statusText}`)
+  }
+
+  const { signedUrl } = await response.json()
+
+  return signedUrl
+}
+
 // Initialize protocol
 const moonpay = new MoonPayProtocol(undefined, {
   apiKey: 'YOUR_PUBLISHABLE_API_KEY',
-  secretKey: 'YOUR_SECRET_KEY'
+  signUrl,
+  environment: 'sandbox'
 })
 
 // Get a buy quote
@@ -83,9 +102,10 @@ new MoonPayProtocol(account, config)
 Parameters:
 - `account` (IWalletAccount | IWalletAccountReadOnly | undefined): The wallet account to use to interact with the protocol
 - `config` (object): The protocol config
-  - `apiKey` (string): MoonPay public key
-  - `secretKey` (string): MoonPay secret key for signing
-  - `cacheTime` (number, optional): The duration in milliseconds to cache supported currencies
+  - `apiKey` (string): Your publishable Moonpay API key.
+  - `signUrl` (function, optional): Callback used to sign buy/sell URLs via a trusted provider (e.g., a backend service). If not provided, the protocol returns unsigned URLs.
+  - `cacheTime` (number, optional): The duration in milliseconds to cache supported currencies.
+  - `environment` ("production" | "sandbox", optional): The environment to use for MoonPay endpoints and widget URLs. Defaults to "production". Use "production" for live transactions and "sandbox" for testing with non-real funds.
 
 ### Methods
 
@@ -162,12 +182,12 @@ Retrieves a list of supported countries.
 - Works with networks and currencies supported by MoonPay.
 - Check MoonPay documentation for the full list of widget parameters, supported cryptocurrencies and regions.
 - The package provides the baseline for MoonPay integration. To fully utilize the power of MoonPay widget, take a look at [MoonPay documentation](https://dev.moonpay.com/docs/ramps-sdk-buy-params) for the full list of parameters.
-- The `secretKey` can be retrieved through [MoonPay dashboard](https://dashboard.moonpay.com/).
-- It is highly recommended to test the entire buy/sell flow in sandbox environment. Read more [here](https://dev.moonpay.com/docs/faq-sandbox-testing).
+- The `apiKey` can be retrieved through [MoonPay dashboard](https://dashboard.moonpay.com/).
+- It is highly recommended to test the entire buy/sell flow in the `sandbox` environment. Read more [here](https://dev.moonpay.com/docs/faq-sandbox-testing).
 
 ## 🔒 Security Considerations
 
-- Keep your `secretKey` safe. Do not expose it in client-side code; always generate buy/sell widget URLs on a backend.
+- Keep your `secretKey` safe on your backend. Expose a backend signing API to clients, and have `signUrl` call that API to retrieve the signed MoonPay URL.
 
 ## 🛠️ Development
 
