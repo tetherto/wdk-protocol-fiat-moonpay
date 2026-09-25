@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, jest, test } from '@jest/globals'
+import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals'
 
 import MoonpayProtocol from '../src/moonpay-protocol.js'
 
 const signUrl = jest.fn()
+const originalFetch = global.fetch
 
 const MOCK_API_KEY = 'pk_test_123'
 const MOCK_SIGNED_URL = 'MOCK_SIGNED_URL'
@@ -17,6 +18,55 @@ const MOCK_CURRENCIES = [
 const mockAccount = {
   getAddress: jest.fn().mockResolvedValue(MOCK_ACCOUNT_ADDRESS)
 }
+
+describe('MoonPay response error details', () => {
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  const operations = [
+    ['buy quote', 'quoteBuy', [{ cryptoAsset: 'eth', fiatCurrency: 'usd', fiatAmount: 1000_00n }], true],
+    ['sell quote', 'quoteSell', [{ cryptoAsset: 'eth', fiatCurrency: 'usd', cryptoAmount: 1_000_000_000_000_000_000n }], true],
+    ['transaction detail', 'getTransactionDetail', ['tx123'], false],
+    ['supported currencies', 'getSupportedCryptoAssets', [], false],
+    ['countries', 'getSupportedCountries', [], false]
+  ]
+
+  test.each(operations)('%s retains the upstream detail and HTTP status', async (_label, method, args, needsCurrencies) => {
+    const detail = JSON.stringify({ moonPayErrorCode: '1_SYS_UNKNOWN', message: 'Currency not supported in test mode' })
+    global.fetch = jest.fn()
+    if (needsCurrencies) {
+      global.fetch.mockResolvedValueOnce({ ok: true, json: async () => MOCK_CURRENCIES })
+    }
+    global.fetch.mockResolvedValueOnce(new Response(detail, { status: 400, statusText: 'Bad Request' }))
+    const moonpay = new MoonpayProtocol(undefined, { apiKey: MOCK_API_KEY })
+
+    await expect(moonpay[method](...args)).rejects.toThrow(`400 Bad Request — ${detail}`)
+    expect(global.fetch).toHaveBeenCalledTimes(needsCurrencies ? 2 : 1)
+  })
+
+  test('retains a non-JSON response body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(new Response('Service temporarily unavailable', { status: 503, statusText: 'Unavailable' }))
+    const moonpay = new MoonpayProtocol(undefined, { apiKey: MOCK_API_KEY })
+
+    await expect(moonpay.getSupportedCountries()).rejects.toThrow('Failed to fetch supported countries: 503 Unavailable — Service temporarily unavailable')
+  })
+
+  test.each(['empty', 'unreadable'])('keeps the original status error for an %s body', async (kind) => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Error',
+      text: async () => {
+        if (kind === 'unreadable') throw new Error('Stream closed')
+        return ''
+      }
+    })
+    const moonpay = new MoonpayProtocol(undefined, { apiKey: MOCK_API_KEY })
+
+    await expect(moonpay.getSupportedCountries()).rejects.toThrow(new Error('Failed to fetch supported countries: 500 Error'))
+  })
+})
 
 describe('MoonPayProtocol', () => {
   const config = { signUrl, apiKey: MOCK_API_KEY, environment: 'sandbox' }
