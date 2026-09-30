@@ -357,6 +357,22 @@ function getFiatDecimals (currencyDetail) {
   return decimals
 }
 
+/**
+ * Preserves an unsuccessful response's detail without masking its HTTP status.
+ * @param {Response} response
+ * @param {string} message
+ * @returns {Promise<Error>}
+ */
+async function responseError (response, message) {
+  let detail = ''
+  try {
+    detail = await response.text()
+  } catch {
+    // The HTTP status remains useful if the response body cannot be read.
+  }
+  return new Error(`${message}: ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ''}`)
+}
+
 const MOONPAY_ORIGINS = {
   API: 'https://api.moonpay.com/',
   BUY: {
@@ -539,7 +555,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     })
 
     if (!resp.ok) {
-      throw new Error(`Failed to fetch MoonPay buy quote: ${resp.status} ${resp.statusText}`)
+      throw await responseError(resp, 'Failed to fetch MoonPay buy quote')
     }
 
     const quote = await resp.json()
@@ -597,7 +613,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     })
 
     if (!resp.ok) {
-      throw new Error(`Failed to fetch MoonPay sell quote: ${resp.status} ${resp.statusText}`)
+      throw await responseError(resp, 'Failed to fetch MoonPay sell quote')
     }
 
     const quote = await resp.json()
@@ -705,7 +721,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     })
 
     if (!resp.ok) {
-      throw new Error(`Failed to fetch MoonPay transaction detail: ${resp.status} ${resp.statusText}`)
+      throw await responseError(resp, 'Failed to fetch MoonPay transaction detail')
     }
 
     const moonPayTransaction = await resp.json()
@@ -737,7 +753,7 @@ export default class MoonPayProtocol extends FiatProtocol {
       })
 
       if (!resp.ok) {
-        throw new Error(`Failed to fetch MoonPay supported currencies: ${resp.status} ${resp.statusText}`)
+        throw await responseError(resp, 'Failed to fetch MoonPay supported currencies')
       }
 
       const data = await resp.json()
@@ -807,7 +823,7 @@ export default class MoonPayProtocol extends FiatProtocol {
     })
 
     if (!resp.ok) {
-      throw new Error(`Failed to fetch supported countries: ${resp.status} ${resp.statusText}`)
+      throw await responseError(resp, 'Failed to fetch supported countries')
     }
 
     const moonPaySupportedCountries = await resp.json()
