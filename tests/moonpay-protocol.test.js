@@ -7,6 +7,7 @@ const signUrl = jest.fn()
 const MOCK_API_KEY = 'pk_test_123'
 const MOCK_SIGNED_URL = 'MOCK_SIGNED_URL'
 const MOCK_ACCOUNT_ADDRESS = 'MOCK_ACCOUNT_ADDRESS'
+const MOCK_ERROR_BODY = '{"moonPayErrorCode":"1_SYS_UNKNOWN","message":"Currency not supported in test mode"}'
 const MOCK_CURRENCIES = [
   { type: 'crypto', code: 'eth', name: 'Ethereum', decimals: 18, precision: 5, metadata: { networkCode: 'ethereum' } },
   { type: 'fiat', code: 'usd', name: 'US Dollar', decimals: 2, precision: 2 },
@@ -610,6 +611,29 @@ describe('MoonPayProtocol', () => {
       expect(buyQuote.metadata).toEqual(MOCK_BUY_QUOTE)
     })
 
+    test('should include the MoonPay error body in the thrown message', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+        })
+
+      await expect(moonpay.quoteBuy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        fiatAmount: 1000_00n
+      })).rejects.toThrow(new Error(`Failed to fetch MoonPay buy quote: 400 Bad Request — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenNthCalledWith(1, `https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+    })
+
     test('should throw error when buy quote fetch fails', async () => {
       global.fetch = jest.fn()
       .mockResolvedValueOnce({
@@ -619,7 +643,8 @@ describe('MoonPayProtocol', () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: 'Error'
+        statusText: 'Error',
+        text: jest.fn().mockResolvedValue('')
       })
 
       await expect(moonpay.quoteBuy({
@@ -800,6 +825,29 @@ describe('MoonPayProtocol', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
+    test('should include the MoonPay error body in the thrown message', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: jest.fn().mockResolvedValue(MOCK_CURRENCIES)
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+        })
+
+      await expect(moonpay.quoteSell({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow(new Error(`Failed to fetch MoonPay sell quote: 400 Bad Request — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenNthCalledWith(1, `https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+    })
+
     test('should throw error when sell quote fetch fails', async () => {
       global.fetch = jest.fn()
         .mockResolvedValueOnce({
@@ -809,7 +857,8 @@ describe('MoonPayProtocol', () => {
         .mockResolvedValueOnce({
           ok: false,
           status: 500,
-          statusText: 'Error'
+          statusText: 'Error',
+          text: jest.fn().mockResolvedValue('')
         })
 
       await expect(moonpay.quoteSell({
@@ -838,11 +887,26 @@ describe('MoonPayProtocol', () => {
       expect(supportedCrypto[0].name).toBe('Ethereum')
     })
 
+    test('should include the MoonPay error body in the thrown message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+      })
+
+      await expect(moonpay.getSupportedCryptoAssets())
+        .rejects.toThrow(new Error(`Failed to fetch MoonPay supported currencies: 400 Bad Request — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
     test('should throw when asset fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        statusText: 'Error'
+        statusText: 'Error',
+        text: jest.fn().mockResolvedValue('')
       })
 
       await expect(moonpay.getSupportedCryptoAssets())
@@ -948,11 +1012,96 @@ describe('MoonPayProtocol', () => {
       expect(countries[1].metadata).toEqual(MOCK_COUNTRIES[1])
     })
 
+    test('should include the MoonPay error body in the thrown message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error(`Failed to fetch supported countries: 400 Bad Request — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should omit the reason phrase when the response has none', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: '',
+        text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error(`Failed to fetch supported countries: 401 — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should omit a body that is only whitespace', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Error',
+        text: jest.fn().mockResolvedValue('  \n\t ')
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error('Failed to fetch supported countries: 500 Error'))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should not split a multi-byte character when truncating', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        text: jest.fn().mockResolvedValue(`${'x'.repeat(499)}\u{1F600}tail`)
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error(`Failed to fetch supported countries: 502 Bad Gateway — ${'x'.repeat(499)}\u{1F600}...`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should truncate a long error body in the thrown message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        text: jest.fn().mockResolvedValue('x'.repeat(600))
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error(`Failed to fetch supported countries: 502 Bad Gateway — ${'x'.repeat(500)}...`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should keep the status line when the error body cannot be read', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        text: jest.fn().mockRejectedValue(new Error('stream closed'))
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error('Failed to fetch supported countries: 503 Service Unavailable'))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
     test('should throw error when fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        statusText: 'Error'
+        statusText: 'Error',
+        text: jest.fn().mockResolvedValue('')
       })
 
       await expect(moonpay.getSupportedCountries()).rejects.toThrow('Failed to fetch supported countries: 500 Error')
@@ -1032,11 +1181,26 @@ describe('MoonPayProtocol', () => {
       expect(details.status).toBe('failed')
     })
 
+    test('should include the MoonPay error body in the thrown message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: jest.fn().mockResolvedValue(MOCK_ERROR_BODY)
+      })
+
+      await expect(moonpay.getTransactionDetail('tx123'))
+        .rejects.toThrow(new Error(`Failed to fetch MoonPay transaction detail: 400 Bad Request — ${MOCK_ERROR_BODY}`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v1/transactions/tx123?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
     test('should throw error when transaction fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        statusText: 'Error'
+        statusText: 'Error',
+        text: jest.fn().mockResolvedValue('')
       })
 
       await expect(moonpay.getTransactionDetail('tx123')).rejects.toThrow('Failed to fetch MoonPay transaction detail: 500 Error')
