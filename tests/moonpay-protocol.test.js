@@ -1068,6 +1068,20 @@ describe('MoonPayProtocol', () => {
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
 
+    test('should not truncate a body of exactly the maximum length', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        text: jest.fn().mockResolvedValue('x'.repeat(500))
+      })
+
+      await expect(moonpay.getSupportedCountries())
+        .rejects.toThrow(new Error(`Failed to fetch supported countries: 502 Bad Gateway — ${'x'.repeat(500)}`))
+
+      expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/countries?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
     test('should truncate a long error body in the thrown message', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,

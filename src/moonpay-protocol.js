@@ -369,8 +369,10 @@ const MAX_ERROR_DETAIL_LENGTH = 500
  *
  * @param {Response} resp - The failed response.
  * @param {string} subject - What was being fetched (e.g. 'MoonPay buy quote').
- * @returns {Promise<Error>} An error whose message combines the response's status line with
- *   its body, truncated to MAX_ERROR_DETAIL_LENGTH characters.
+ * @returns {Promise<Error>} An error whose message names the subject and the response's status
+ *   code, followed by the reason phrase when the server sent one and by the response body when
+ *   it is non-empty and readable. A body longer than MAX_ERROR_DETAIL_LENGTH characters is cut
+ *   to that length and suffixed with an ellipsis.
  */
 async function fetchErrorFor (resp, subject) {
   const body = (await resp.text().catch(() => '')).trim()
