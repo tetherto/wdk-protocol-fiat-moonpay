@@ -402,6 +402,25 @@ const MOONPAY_ORIGINS = {
 }
 const MOONPAY_CACHE_TIME = 10 * 60 * 1000
 
+/**
+ * The most decimals, or digits of precision, a MoonPay currency record may carry.
+ */
+const MAX_CURRENCY_DIGITS = 36
+
+/**
+ * Checks a decimals or precision value from a MoonPay currency record before it scales an amount.
+ *
+ * @param {string} code - The currency's code.
+ * @param {string} field - The record field the value comes from.
+ * @param {unknown} value - The value.
+ * @throws {Error} If the value is not an integer between 0 and 36.
+ */
+function assertCurrencyDigits (code, field, value) {
+  if (!Number.isInteger(value) || value < 0 || value > MAX_CURRENCY_DIGITS) {
+    throw new Error(`MoonPay returned an invalid ${field} for ${code}: ${value}`)
+  }
+}
+
 export default class MoonPayProtocol extends FiatProtocol {
   /**
    * Creates a new interface to interact with the MoonPay protocol without binding it to a wallet account.
@@ -455,6 +474,12 @@ export default class MoonPayProtocol extends FiatProtocol {
     if (!cryptoInfo || !fiatInfo) {
       throw new Error('Cannot find info for cryptoAsset and fiatCurrency')
     }
+
+    assertCurrencyDigits(cryptoInfo.code, 'decimals', cryptoInfo.decimals)
+    assertCurrencyDigits(cryptoInfo.code, 'precision', cryptoInfo.precision)
+    assertCurrencyDigits(fiatInfo.code, 'decimals', getFiatDecimals(fiatInfo))
+    assertCurrencyDigits(fiatInfo.code, 'precision', fiatInfo.precision)
+
     return { cryptoInfo, fiatInfo }
   }
 
@@ -463,6 +488,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @param {MoonPayBuyOptions} options - The options for the purchase.
    * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
+   * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
    */
   async buy (options) {
     const { cryptoAsset, fiatCurrency, recipient, config } = options
@@ -528,6 +554,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @param {MoonPayQuoteBuyOptions} options - The options for the quote.
    * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
+   * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
    */
   async quoteBuy (options) {
     const { cryptoAsset, fiatCurrency, config } = options
@@ -594,6 +621,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @param {MoonPayQuoteSellOptions} options - The options for the quote.
    * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
+   * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
    */
   async quoteSell (options) {
     const { cryptoAsset, fiatCurrency, cryptoAmount, config } = options
@@ -652,6 +680,7 @@ export default class MoonPayProtocol extends FiatProtocol {
    * @override
    * @param {MoonPaySellOptions} options - The options for the sale.
    * @returns {Promise<SellResult>} The URL for the user to complete the sale.
+   * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
    */
   async sell (options) {
     const { cryptoAsset, fiatCurrency, refundAddress, config } = options
