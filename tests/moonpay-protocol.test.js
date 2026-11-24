@@ -15,6 +15,13 @@ const MOCK_CURRENCIES = [
   { type: 'fiat', code: 'bad_fiat', name: 'Bad Fiat', precision: undefined, decimals: undefined }
 ]
 
+const INVALID_DIGIT_CURRENCIES = [
+  ...MOCK_CURRENCIES,
+  { type: 'crypto', code: 'null_decimals', name: 'Null Decimals', decimals: null, precision: 5, metadata: { networkCode: 'ethereum' } },
+  { type: 'crypto', code: 'huge_precision', name: 'Huge Precision', decimals: 18, precision: 100_000_000, metadata: { networkCode: 'ethereum' } },
+  { type: 'fiat', code: 'fractional_precision', name: 'Fractional Precision', decimals: null, precision: 1.5 }
+]
+
 const mockAccount = {
   getAddress: jest.fn().mockResolvedValue(MOCK_ACCOUNT_ADDRESS)
 }
@@ -251,6 +258,48 @@ describe('MoonPayProtocol', () => {
         fiatAmount: 1000_00n
       })).rejects.toThrow('Could not determine decimals for fiat currency: bad_fiat')
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
+    })
+
+    test('should throw error when the crypto currency record has no integer decimals', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.buy({
+        cryptoAsset: 'null_decimals',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow('MoonPay returned an invalid decimals for null_decimals: null')
+      expect(signUrl).not.toHaveBeenCalled()
+    })
+
+    test('should throw error when the crypto currency record has a precision above 36', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.buy({
+        cryptoAsset: 'huge_precision',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow('MoonPay returned an invalid precision for huge_precision: 100000000')
+      expect(signUrl).not.toHaveBeenCalled()
+    })
+
+    test('should throw error when the fiat currency record has a fractional precision', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.buy({
+        cryptoAsset: 'eth',
+        fiatCurrency: 'fractional_precision',
+        fiatAmount: 1000_00n
+      })).rejects.toThrow('MoonPay returned an invalid decimals for fractional_precision: 1.5')
+      expect(signUrl).not.toHaveBeenCalled()
     })
 
     test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
@@ -509,6 +558,20 @@ describe('MoonPayProtocol', () => {
       expect(global.fetch).toHaveBeenCalledWith(`https://api.moonpay.com/v3/currencies?apiKey=${MOCK_API_KEY}`, { headers: { accept: 'application/json' } })
     })
 
+    test('should throw error when the crypto currency record has no integer decimals', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.sell({
+        cryptoAsset: 'null_decimals',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow('MoonPay returned an invalid decimals for null_decimals: null')
+      expect(signUrl).not.toHaveBeenCalled()
+    })
+
     test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
@@ -705,6 +768,20 @@ describe('MoonPayProtocol', () => {
       expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
+    test('should throw error when the crypto currency record has no integer decimals', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.quoteBuy({
+        cryptoAsset: 'null_decimals',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow('MoonPay returned an invalid decimals for null_decimals: null')
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+    })
+
     test('should throw error if both cryptoAmount and fiatAmount are provided', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
@@ -768,6 +845,20 @@ describe('MoonPayProtocol', () => {
       expect(sellQuote.fee).toBe(5000n) // (45 + 5) * 100
       expect(sellQuote.rate).toBe('3000')
       expect(sellQuote.metadata).toEqual(mockQuote)
+    })
+
+    test('should throw error when the crypto currency record has no integer decimals', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(INVALID_DIGIT_CURRENCIES)
+      })
+
+      await expect(moonpay.quoteSell({
+        cryptoAsset: 'null_decimals',
+        fiatCurrency: 'usd',
+        cryptoAmount: 1_000_000_000_000_000_000n
+      })).rejects.toThrow('MoonPay returned an invalid decimals for null_decimals: null')
+      expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
     test('should throw error if cryptoAmount is not provided', async () => {

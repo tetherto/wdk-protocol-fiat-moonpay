@@ -43,6 +43,7 @@ export default class MoonPayProtocol extends FiatProtocol {
      * @override
      * @param {MoonPayBuyOptions} options - The options for the purchase.
      * @returns {Promise<BuyResult>} The URL for the user to complete the purchase.
+     * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
      */
     override buy(options: MoonPayBuyOptions): Promise<BuyResult>;
     /**
@@ -50,6 +51,7 @@ export default class MoonPayProtocol extends FiatProtocol {
      * @override
      * @param {MoonPayQuoteBuyOptions} options - The options for the quote.
      * @returns {Promise<MoonPayBuyQuote>} A quote for the transaction.
+     * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
      */
     override quoteBuy(options: MoonPayQuoteBuyOptions): Promise<MoonPayBuyQuote>;
     /**
@@ -57,6 +59,7 @@ export default class MoonPayProtocol extends FiatProtocol {
      * @override
      * @param {MoonPayQuoteSellOptions} options - The options for the quote.
      * @returns {Promise<MoonPaySellQuote>} A quote for the transaction.
+     * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
      */
     override quoteSell(options: MoonPayQuoteSellOptions): Promise<MoonPaySellQuote>;
     /**
@@ -64,6 +67,7 @@ export default class MoonPayProtocol extends FiatProtocol {
      * @override
      * @param {MoonPaySellOptions} options - The options for the sale.
      * @returns {Promise<SellResult>} The URL for the user to complete the sale.
+     * @throws {Error} If MoonPay's record for the crypto asset or the fiat currency has a decimals or precision that is not an integer between 0 and 36.
      */
     override sell(options: MoonPaySellOptions): Promise<SellResult>;
     /**
